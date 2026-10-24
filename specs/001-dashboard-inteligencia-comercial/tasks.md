@@ -1,7 +1,8 @@
 # Tasks: 001 - Sistema de Inteligencia Comercial y Dashboard de Ventas B2B/B2C
 
 **Código:** `QK-VENTAS-001`  
-**Metodología:** Spec-Kit (`tasks` ➔ `analyze` ➔ `implement`)
+**Metodología:** Spec-Kit (`tasks` ➔ `analyze` ➔ `implement`)  
+**Regla de Eficiencia:** Ahorro extremo de tokens (cero volcados masivos en prompt; código determinista en Python/JS).
 
 ---
 
@@ -15,11 +16,11 @@
 
 ---
 
-## FASE 2: INGESTA, ALMACÉN PARQUET Y VENTANA RODANTE DE 60 DÍAS (EN CURSO 🟡)
-- [ ] **T007**: Crear el script de ingesta `src/etl_ventas_defontana.py` para parsear el reporte `INF_VENTAS_DETALLADAS` (Excel/CSV/HTML de Defontana), normalizando fechas, tipos numéricos, clientes, RUC y montos netos.
+## FASE 2: INGESTA, ALMACÉN PARQUET Y VENTANA RODANTE DE 90 DÍAS (EN CURSO 🟡)
+- [ ] **T007**: Crear el script de ingesta `src/etl_ventas_defontana.py` para parsear el reporte `INF_VENTAS_DETALLADAS` (.xlsx/.csv exportado por el RPA de abastecimiento en ventana de 90 días), normalizando fechas, tipos numéricos, clientes, RUC y montos netos.
 - [ ] **T008**: Implementar la lógica de deducción de Notas de Crédito (NC), restando unidades y montos netos del vendedor y producto correspondiente.
 - [ ] **T009**: Implementar el filtro de exclusión estricto para las 3 cuentas catalogadas como *"Consumo Interno"*.
-- [ ] **T010**: Construir el módulo de almacenamiento `data/ventas_2025_2026.parquet` y el algoritmo de ventana rodante de 60 días con `upsert` por clave compuesta `Nombre_Doc + Nro_Doc + Cod_Producto`.
+- [ ] **T010**: Construir el módulo de almacenamiento `data/ventas_2025_2026.parquet` y el algoritmo de ventana rodante de **90 días (3 meses)** con `upsert` por clave compuesta `Nombre_Doc + Nro_Doc + Cod_Producto`.
 - [ ] **T011**: Configurar el maestro de equivalencias de Marcas a Proveedores Titulares (ej. *D'Nattive* al laboratorio titular, *Oriundos* a *Nutrivas*, *Santiveri* a *Molinos del Mundo*).
 
 ---
@@ -40,12 +41,12 @@
 ---
 
 ## FASE 4: VINCULACIÓN AL DASHBOARD (FRONTEND BINDING) (PENDIENTE ⚪)
-- [ ] **T017**: Crear el script `src/exportar_datos_dashboard.py` que consolida los cálculos y genera el snapshot reactivo `data/datos_comerciales.json`.
+- [ ] **T017**: Crear el script `src/exportar_datos_dashboard.py` que consolida los cálculos deterministas y genera el snapshot reactivo `data/datos_comerciales.json`.
 - [ ] **T018**: Conectar `PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html` a la lectura de `data/datos_comerciales.json`, reemplazando el objeto mock en memoria.
 - [ ] **T019**: Incorporar en el Dashboard un componente visual de carga (Dropzone) con SheetJS embebido (`xlsx.full.min.js` offline) para permitir importar reportes de Defontana directamente desde la interfaz web sin terminal.
 
 ---
 
 ## FASE 5: AUDITORÍA UX Y DESPLIEGUE CLOUD (PENDIENTE ⚪)
-- [ ] **T020**: Auditar el Dashboard utilizando el estándar `impeccable` en modo `Operate` (alto contraste, tipografía no menor a 12px, números tabulares alineados a la derecha y touch targets móviles de WhatsApp).
+- [ ] **T020**: Auditar el Dashboard utilizando la skill `impeccable` en modo `Operate` (alto contraste, tipografía no menor a 12px, números tabulares alineados a la derecha y touch targets móviles de WhatsApp >= 48px).
 - [ ] **T021**: Configurar el despliegue automático gratuito en GitHub Pages / Vercel para acceso directivo en la nube (S/ 0.00).

@@ -13,7 +13,8 @@
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        CAPA 1: INGESTA & ETL                           │
 │  - Parser de reportes Defontana ('INF_VENTAS_DETALLADAS' .xlsx / .csv) │
-│  - Ingesta incremental de ventana rodante de 60 días                   │
+│  - Ingesta incremental de ventana rodante de 90 días (3 meses)         │
+│  - Lectura directa de descargas existentes de abastecimiento           │
 │  - Deducción determinista de Notas de Crédito                          │
 │  - Mapeo de Carteras (6 segmentos) y Maestro de Proveedores vs Marcas │
 └───────────────────────────────────┬────────────────────────────────────┘
@@ -39,54 +40,27 @@
 
 ---
 
-## 2. Pila Tecnológica y Decisiones de Diseño
+## 2. Pila Tecnológica y Suite de Herramientas IA Seleccionadas
 
-| Componente | Tecnología Seleccionada | Justificación Técnica | Costo |
+| Componente | Tecnología / Herramienta | Justificación Técnica | Costo |
 | :--- | :--- | :--- | :---: |
-| **ETL & Data Processing** | Python 3.11 (`pandas`, `openpyxl`, `pyarrow`) | Determinismo matemático estricto, manipulación eficiente de Parquet e ingesta de Excel sin dependencias pagas. | S/ 0.00 |
-| **Almacenamiento Histórico** | Parquet (`data/ventas_2025_2026.parquet`) | Formato columnar ultraliviano, compresión alta (>80%), consultas instantáneas por ventana de tiempo. | S/ 0.00 |
-| **Data Contract / Interfaz** | JSON (`data/datos_comerciales.json`) | Desacopla el backend de datos del frontend; permite alimentar el dashboard tanto en local como en web. | S/ 0.00 |
+| **ETL & Data Processing** | Python 3.11 (`pandas`, `openpyxl`, `pyarrow`) | Determinismo matemático estricto, manipulación eficiente de Parquet e ingesta de Excel sin dependencias pagas ni alucinaciones de LLM. | S/ 0.00 |
+| **Almacenamiento Histórico** | Parquet (`data/ventas_2025_2026.parquet`) | Formato columnar ultraliviano, compresión alta (>80%), consultas instantáneas en ventana de 90 días. | S/ 0.00 |
+| **Data Contract / Interfaz** | JSON (`data/datos_comerciales.json`) | Desacopla el backend de datos del frontend; alimenta el dashboard tanto en local como en web. | S/ 0.00 |
 | **Frontend UI / UX** | HTML5 semántico, CSS3 moderno con variables CSS | Cero dependencias por CDN; funciona 100% offline; renderiza en cualquier navegador (Chrome, Edge, Safari). | S/ 0.00 |
 | **Gráficos y Visualización** | SVG nativo generado por JavaScript | Gráficos vectoriales nítidos y livianos sin librerías pesadas tipo Chart.js ni D3.js. | S/ 0.00 |
+| **Metodología y Gobernanza** | Spec-Kit Suite (`constitution`, `specify`, `clarify`, `plan`, `tasks`, `analyze`, `implement`, `converge`) | Ciclo disciplinado de especificación antes de codificar, garantizando cero ambigüedades y control de calidad estricto. | S/ 0.00 |
+| **Auditoría UX / UI** | Skill `impeccable` (Modo `Operate`) | Estándar visual de alta densidad: semáforos de alto contraste, números tabulares alineados a la derecha y touch targets móviles de WhatsApp (>= 48px). | S/ 0.00 |
+| **Control de Calidad** | Skill `gstack` (`gstack-review`, `gstack-browse`) | Revisión de diffs, seguridad de código y comprobación en navegador sin errores de consola. | S/ 0.00 |
 | **Despliegue / Hosting** | GitHub Pages / Vercel (Hobby) | Despliegue en la nube con HTTPS gratuito para acceso de directivos desde celulares o laptops. | S/ 0.00 |
 
 ---
 
-## 3. Estructura de Directorios del Proyecto
+## 3. Estrategia de Eficiencia y Ahorro Extremo de Tokens
 
-```
-📁 Estrategia Ventas Qali Kay/
-│   ├── AGENTS.md                                   <-- Reglas del Director y del Negocio QK
-│   ├── BLUEPRINT_SISTEMA_VENTAS_QALIKAY.md          <-- Master Blueprint v5.0
-│   ├── CONTEXTO_MAESTRO_VENTAS_QALI_KAY.md         <-- Glosario comercial y carteras
-│   ├── ROLES_DIRECTOR_Y_EJECUTOR.md                <-- Modelo de Gobernanza Dual
-│   ├── PACK_REANUDACION_SESION_QALIKAY.md          <-- Resumen ejecutivo de traspaso
-│   ├── PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html     <-- Dashboard en producción/raíz
-│   │
-│   ├── 📁 .specify/                                <-- Infraestructura Spec-Kit
-│   │   ├── memory/constitution.md                  <-- Constitución de Ventas (7 principios)
-│   │   ├── templates/                              <-- Plantillas de spec, plan, tasks
-│   │   └── feature.json                            <-- Puntero a la feature activa
-│   │
-│   ├── 📁 specs/001-dashboard-inteligencia-comercial/
-│   │   ├── spec.md                                 <-- Especificación de requerimientos
-│   │   ├── plan.md                                 <-- Este plan de arquitectura
-│   │   ├── tasks.md                                <-- Tareas atómicas ordenadas
-│   │   └── validation-report.md                    <-- Reporte de speckit-analyze (PASS)
-│   │
-│   ├── 📁 src/                                     <-- Scripts y pipelines (Backend ETL)
-│   │   ├── etl_ventas_defontana.py                 <-- Ingesta de INF_VENTAS_DETALLADAS
-│   │   ├── ventana_rodante_60d.py                  <-- Upsert de comprobantes y NC
-│   │   └── exportar_datos_dashboard.py             <-- Generador de datos_comerciales.json
-│   │
-│   ├── 📁 data/                                    <-- Repositorio de datos
-│   │   ├── ventas_2025_2026.parquet                <-- Base histórica consolidada
-│   │   └── datos_comerciales.json                  <-- Snapshot reactivo para el dashboard
-│   │
-│   └── 📁 ejecucion/                               <-- Espacio de trabajo del Agente Ejecutor
-│       ├── AGENTS.md                               <-- Reglas técnicas para el programador
-│       └── PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html <-- Taller de desarrollo
-```
+1. **Divulgación Progresiva:** Nunca pasar archivos crudos de ventas (miles de filas) al contexto del modelo. El procesamiento se hace mediante scripts deterministas en Python. El LLM solo recibe resúmenes de esquema, diccionarios de datos o errores específicos.
+2. **Desacoplamiento de Roles:** El Director define especificaciones en Markdown de alto nivel; el Ejecutor recibe tareas atómicas de `tasks.md` acotadas a un único archivo o función.
+3. **Persistencia en Disco:** Toda decisión queda fijada en `specs/` y `BLUEPRINT`, eliminando conversaciones redundantes que quemen tokens en cada sesión.
 
 ---
 
@@ -98,9 +72,9 @@
 - Creación del generador de bandejas de WhatsApp limpias con botón de copiado.
 
 ### Fase 2: Pipeline ETL y Almacén Histórico 2025–2026 (En curso 🟡)
-- Script Python para ingesta del reporte `INF_VENTAS_DETALLADAS` de Defontana.
-- Normalización de tipos de datos, descuento de Notas de Crédito y filtro de *Consumo Interno*.
-- Implementación de la ventana rodante de 60 días sobre `data/ventas_2025_2026.parquet`.
+- Script Python para ingesta del reporte `INF_VENTAS_DETALLADAS` de Defontana (ventana de 90 días).
+- Normalización de tipos de datos, deducción de Notas de Crédito y filtro de *Consumo Interno*.
+- Implementación de la ventana rodante de 90 días sobre `data/ventas_2025_2026.parquet`.
 - Maestro de mapeo de marcas hacia proveedores titulares (ej. *D'Nattive* al laboratorio titular).
 
 ### Fase 3: Motor de Reglas Comerciales y Carteras (En curso 🟡)

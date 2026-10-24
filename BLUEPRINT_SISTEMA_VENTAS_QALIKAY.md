@@ -1,4 +1,4 @@
-# Blueprint Maestro: Sistema de Inteligencia Comercial, KPIs y Alertas — Qali Kay (V5.0 Definitiva)
+# Blueprint Maestro: Sistema de Inteligencia Comercial, KPIs y Alertas — Qali Kay (V5.1 Definitiva)
 **Empresa:** Qali Kay S.A.C — "Aliados en salud natural"  
 **Responsable Comercial:** Cristian Gutiérrez (Director General)  
 **Rol del Agente:** Director Técnico Comercial y Especialista en Ingeniería de IA  
@@ -20,41 +20,43 @@ El **Sistema de Inteligencia Comercial y Ventas B2B/B2C de Qali Kay** es una pla
 
 ## 2. REGLAS INQUEBRANTABLES DE ARQUITECTURA (`CONSTITUTION`)
 
-1. **Aislamiento Total respecto a `qalikay-abastecimiento`:**
-   Queda **terminantemente prohibido** modificar, alterar dependencias, sobreescribir scripts o compartir entornos de ejecución con el módulo RPA de abastecimiento (`qalikay-abastecimiento`). `qalikay-ventas` es 100% autónomo y almacena su propia base de datos histórica.
-2. **Base Histórica Consolidada 2025–2026 con Ventana Incremental de 60 Días:**
-   El sistema analiza **todo el 2025 y todo el 2026**. Para la actualización diaria (programada en 2 cortes: 07:30 AM y 03:30 PM), no se reprocesan los 24 meses; se descarga y procesa una **ventana rodante de los últimos 60 días (2 meses)**, aplicando un `upsert` por clave única (`Nombre_Doc + Nro_Doc + Cod_Producto`) para capturar automáticamente Notas de Crédito, anulaciones o modificaciones de documentos pasados sin costo computacional excesivo.
-3. **Determinismo Matemático Absoluto (Prohibido LLM para Cálculos Numéricos):**
-   Todos los cálculos (ventas netas, tickets, márgenes, % share, proyecciones) se ejecutan mediante código determinista puro (Python / DuckDB / JavaScript ES6). Los modelos de IA no calculan sumatorias ni promedios matemáticos; su rol es analítico, estratégico y de orquestación.
-4. **Presupuesto $0.00 (Zero-Cost Hosting & Tools):**
+1. **Aislamiento Total respecto a `qalikay-abastecimiento` (Aprovechamiento de Ingesta sin Modificar Código):**
+   Queda **terminantemente prohibido** modificar, alterar dependencias, sobreescribir scripts o alterar el flujo del bot RPA de abastecimiento (`qalikay-abastecimiento`). `qalikay-ventas` es 100% autónomo. Sin embargo, para no saturar el ERP Defontana con descargas duplicadas, `qalikay-ventas` **lee directamente en modo solo lectura los reportes ya descargados** por la automatización existente.
+2. **Base Histórica Consolidada 2025–2026 con Ventana Incremental de 90 Días (3 Meses):**
+   El sistema analiza **todo el 2025 y todo el 2026**. Para la actualización diaria incremental se adopta una **ventana rodante de los últimos 90 días (3 meses)** (alineada a la ventana de extracción de abastecimiento). El motor aplica un `upsert` por clave única (`Nombre_Doc + Nro_Doc + Cod_Producto`) sobre el almacén Parquet para capturar automáticamente Notas de Crédito, devoluciones y anulaciones de documentos pasados sin tener que reprocesar los 24 meses completos.
+3. **Determinismo Matemático Absoluto (Cero Alucinación Numérica):**
+   Todos los cálculos (ventas netas, tickets, márgenes, % share, proyecciones) se ejecutan mediante código determinista puro (Python / DuckDB / JavaScript ES6). Queda **terminantemente prohibido usar Modelos de Lenguaje (LLMs) para calcular sumatorias o promedios matemáticos**.
+4. **Política de Eficiencia y Ahorro Extremo de Tokens:**
+   - **Cero volcados masivos en el prompt:** Nunca inyectar tablas completas de miles de filas al contexto del LLM. Los scripts procesan la data localmente y el LLM solo recibe esquemas, agregados o resúmenes ejecutivos.
+   - **Tareas atómicas y acotadas:** El Director delega al Ejecutor tareas puntuales con alcance exacto de archivos para evitar dispersión y consumo innecesario de tokens.
+   - **Persistencia en disco:** La memoria y decisiones se guardan en archivos (`specs/`, `data/`, `BLUEPRINT`), evitando tener que re-explicar el contexto en cada turno.
+5. **Presupuesto $0.00 (Zero-Cost Hosting & Tools):**
    Prohibido contratar APIs de pago, software SaaS con licencia por usuario o complementos de pago. El sistema se aloja en hosting gratuito (Vercel / GitHub Pages) y corre localmente o con scripts abiertos.
-5. **Diferenciación Estricta Proveedor vs Marca:**
+6. **Diferenciación Estricta Proveedor vs Marca:**
    - **Proveedor:** Laboratorio farmacéutico, importador o distribuidor titular con quien Qali Kay negocia crédito, margen y lead time (ej. Laboratorios Bagó, Medifarma, Nutrivas, Molinos del Mundo).
    - **Marca:** Línea de producto comercial (ej. *D'Nattive*, *Santiveri*, *Oriundos*). En los maestros y análisis, todo SKU se agrupa bajo su **Proveedor Titular Oficial**.
-6. **Confidencialidad Comercial y Segmentación:**
+7. **Confidencialidad Comercial y Segmentación:**
    En la fase de prueba/operación, los vendedores **no tienen acceso al dashboard consolidado global**. La dirección o jefatura les despacha capturas de pantalla de su **Ficha Individual (Pestaña 1)** y los textos generados en las **Bandejas de WhatsApp (Pestaña 5)**. La totalidad de las 5 pestañas es de acceso exclusivo directivo.
-7. **Privacidad de Prospectos y Bases de Clientes:**
-   Los archivos de prospección en Google Drive y las bases de farmacias se mantienen privados en todo momento; ningún link público debe exponer datos sensibles de clientes o precios.
 
 ---
 
-## 3. ARQUITECTURA DE DATOS Y PIPELINE ETL
+## 3. ARQUITECTURA DE DATOS Y PIPELINE ETL (VENTANA DE 90 DÍAS)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          FUENTES PRIMARIAS                             │
-│  1. ERP Defontana: Reporte 'INF_VENTAS_DETALLADAS' (Excel/HTML)        │
-│  2. ERP Defontana: 'Compromisos_Entrega' y 'Kardex Resumido'           │
-│  3. OneDrive: 'CUENTAS POR COBRAR.xlsx' (Control de facturas vencidas) │
-│  4. Maestro de Clientes: 'Contactos de Farmacias - Consolidado.xlsx'   │
-│  5. Google Drive: Prospectos B2B privados (Enrique y Carlos)           │
+│  1. ERP Defontana (vía descargas RPA existentes de 90 días):           │
+│     - 'INF_VENTAS_DETALLADAS' (.xlsx/.csv)                             │
+│     - 'Compromisos_Entrega' y 'Kardex Resumido'                        │
+│  2. OneDrive: 'CUENTAS POR COBRAR.xlsx' (Facturas vencidas)            │
+│  3. Maestro de Clientes: 'Contactos de Farmacias - Consolidado.xlsx'   │
+│  4. Google Drive: Prospectos B2B privados (Enrique y Carlos)           │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                 MOTOR ETL & NORMALIZACIÓN (qalikay-ventas)             │
 │  - Limpieza de cabeceras, conversión a tipos numéricos deterministas   │
-│  - Mapeo de Vendedores reales (resolución de alias y carteras)         │
 │  - Normalización: Descuento de Notas de Crédito (NC) de ventas netas   │
 │  - Mapeo de Marcas a Proveedores Titulares (ej. D'Nattive -> Titular)  │
 │  - Filtro y exclusión de las 3 cuentas de 'Consumo Interno'            │
@@ -62,10 +64,10 @@ El **Sistema de Inteligencia Comercial y Ventas B2B/B2C de Qali Kay** es una pla
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   ALMACENAMIENTO INCREMENTAL (60 DÍAS)                 │
+│                   ALMACENAMIENTO INCREMENTAL (90 DÍAS)                 │
 │  - Repositorio Histórico: data/ventas_2025_2026.parquet                │
 │  - Clave Única Upsert: [Nombre_Doc] + [Nro_Doc] + [Cod_Producto]       │
-│  - Ventana Rodante: Últimos 60 días se sobreescriben automáticamente   │
+│  - Ventana Rodante: Últimos 90 días se sobreescriben automáticamente   │
 │  - Exportación para Dashboard: data/datos_comerciales.json             │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
@@ -78,27 +80,35 @@ El **Sistema de Inteligencia Comercial y Ventas B2B/B2C de Qali Kay** es una pla
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Campos Clave del Reporte Defontana (`INF_VENTAS_DETALLADAS`):
-- `Fecha`: Fecha de emisión del comprobante (YYYY-MM-DD).
-- `Tipo Doc`: Factura, Boleta de Venta, Nota de Crédito.
-- `Nro Documento`: Identificador único correlativo.
-- `RUC / DNI`: Documento de identidad del comprador.
-- `Razón Social / Cliente`: Nombre fiscal o comercial de la farmacia / tienda / consumidor.
-- `Vendedor`: Código o nombre del ejecutivo que facturó.
-- `Código Producto (SKU)`: Código interno Qali Kay (ej. `NAN-001`, `DNC-038`).
-- `Descripción Producto`: Nombre comercial del ítem.
-- `Cantidad`: Unidades vendidas (negativo en caso de NC).
-- `Precio Unitario Venta`: Valor unitario sin IGV y con IGV.
-- `Venta Neta (S/)`: Subtotal neto sin IGV (afectado por NC).
-- `Costo Total (S/)`: Costo de adquisición de la mercadería.
-- `Margen Bruto (S/)`: `Venta Neta - Costo Total`.
-- `Margen %`: `(Margen Bruto / Venta Neta) * 100`.
+---
+
+## 4. SUITE DE SKILLS, MCPS Y HERRAMIENTAS DE IA SELECCIONADAS
+
+Para asegurar rigor metodológico y control de calidad, el proyecto adopta formalmente la siguiente suite de herramientas de IA:
+
+### A. Spec-Kit Suite (Metodología Formal de Especificación):
+1. **`speckit-constitution`**: Gobierno y salvaguarda de los principios no negociables (costo S/ 0.00, aislamiento, marcas vs proveedores).
+2. **`speckit-specify`**: Creación formal de requerimientos funcionales y criterios de aceptación en `spec.md`.
+3. **`speckit-clarify` (PASO OBLIGATORIO)**: Identificación proactiva de vacíos comerciales, ambigüedades y casos borde antes de escribir código.
+4. **`speckit-plan`**: Definición de la arquitectura técnica, esquemas y data contracts en `plan.md`.
+5. **`speckit-tasks`**: Desglose de tareas atómicas con dependencias ordenadas en `tasks.md`.
+6. **`speckit-analyze` (FILTRO DE CALIDAD OBLIGATORIO)**: Validación cruzada de consistencia entre spec, plan, tasks y constitución antes de autorizar código (`validation-report.md`).
+7. **`speckit-implement`**: Ejecución disciplinada de tareas a cargo del Agente Ejecutor en `/ejecucion/`.
+8. **`speckit-converge`**: Evaluación del estado del codebase contra las tareas para detectar pendientes.
+
+### B. Impeccable Skill (`impeccable`):
+- **Modo `Operate` para Dashboards:** Estándar de diseño para alta densidad de información (números tabulares alineados a la derecha, semáforos de alto contraste, tipografía legible >= 12px, badges informativos, touch targets para móviles en botones de WhatsApp >= 48px).
+
+### C. gstack Suite (Ingeniería de Software & Calidad):
+- **`gstack-review`**: Auditoría de diffs y seguridad antes de fusionar cambios del ejecutor al prototipo principal.
+- **`gstack-browse` / Chrome DevTools**: Pruebas automáticas de interacción en navegador, validación de eventos táctiles y comprobación de errores en consola.
+
+### D. Herramientas Nativas de Ejecución:
+- Uso prioritario de las herramientas nativas de Antigravity (`run_command`, `write_file`, `edit_file`, `read_file`) sin agregar MCPs externos innecesarios que consuman memoria o tokens.
 
 ---
 
-## 4. RADIOGRAFÍA DE CARTERAS COMERCIALES (6 SEGMENTOS)
-
-El motor comercial clasifica todas las transacciones en **6 carteras operativas**, con reglas específicas de negocio:
+## 5. RADIOGRAFÍA DE CARTERAS COMERCIALES (6 SEGMENTOS)
 
 | # | Cartera / Canal | Titular | Naturaleza y Reglas Específicas |
 | :-: | :--- | :--- | :--- |
@@ -114,7 +124,7 @@ El motor comercial clasifica todas las transacciones en **6 carteras operativas*
 
 ---
 
-## 5. REGLAS DE NEGOCIO, PERIODICIDAD Y ALERTAS OPERATIVAS
+## 6. REGLAS DE NEGOCIO, PERIODICIDAD Y ALERTAS OPERATIVAS
 
 ### A. Ciclos de Recompra B2C (Consumidor Final):
 - **Ciclo Base:** 25 días (duración promedio de un frasco de 60/100 cápsulas o gomitas).
@@ -135,7 +145,7 @@ El motor comercial clasifica todas las transacciones en **6 carteras operativas*
 
 ---
 
-## 6. MATRIZ MAESTRA DE PROVEEDORES, MARCAS Y LEAD TIMES
+## 7. MATRIZ MAESTRA DE PROVEEDORES, MARCAS Y LEAD TIMES
 
 | Proveedor Titular (Laboratorio/Importador) | Marcas Asociadas | Lead Time / Modalidad de Despacho | Observaciones Comerciales |
 | :--- | :--- | :--- | :--- |
@@ -156,50 +166,20 @@ El motor comercial clasifica todas las transacciones en **6 carteras operativas*
 
 ---
 
-## 7. ESPECIFICACIÓN TÉCNICA DEL DASHBOARD (5 PESTAÑAS)
+## 8. ESPECIFICACIÓN TÉCNICA DEL DASHBOARD (5 PESTAÑAS)
 
-El frontend se materializa en [PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html](file:///c:/Users/USER/OneDrive/Documents/Proyectos%20Antigravity/Estrategia%20Ventas%20Qali%20Kay/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html), operando como Single Page Application autónoma con estilos CSS y gráficos SVG embebidos:
-
-### Pestaña 1: "Gestión por Vendedor"
-- **Ficha Individual (Vista por defecto):**
-  - Selector dinámico por vendedor (Enrique, Walter, Cristian, Carlos C, Linda/Zully B2B, Linda/Zully B2C).
-  - **HUD de 6 KPIs:** 1. Venta Mes en Curso (S/), 2. Meta Comercial (S/), 3. % Cumplimiento, 4. Proyección de Cierre a Fin de Mes (S/), 5. Ticket Promedio (S/), 6. Clientes Activos del Mes.
-  - **Mix de SKUs y Proveedores:** Tabla de concentración de productos y proveedores colocados por ese vendedor en el mes.
-  - **Top Clientes Clave:** Ranking de clientes principales con su volumen acumulado, último pedido y semáforo de recurrencia.
-- **Matriz Comparativa de Vendedores (Subvista):** Tabla tabular completa que compara en una sola pantalla a todo el equipo de ventas.
-
-### Pestaña 2: "Gestión por Proveedor y SKU"
-- **Ficha Individual por Proveedor (Vista por defecto):**
-  - Selector dinámico por proveedor titular.
-  - **TOP 5 Productos por Proveedor:** Muestra para cada SKU su **Venta Neta en Soles (S/)** y su **Participación Porcentual (% Share)** sobre el total del proveedor.
-  - **Gráfico SVG de Barras Interactivo:** Desglose visual de cuánto vendió cada vendedor para ese proveedor seleccionado.
-  - **Tarjeta de Condiciones Operativas:** Lead time promedio (días), días de crédito acordados, política de despacho y promociones vigentes del mes.
-- **Matriz General de Proveedores (Subvista):** Tabla consolidada con volumen total facturado por proveedor y % de share sobre las ventas globales de Qali Kay.
-
-### Pestaña 3: "Comparativa Histórica"
-- **Gráfico SVG Multi-período:** Curva evolutiva comparativa entre los meses cerrados históricos y el avance del mes en curso.
-- **Tabla Analítica Mensual:** Resumen numérico mes a mes de ventas totales, variación intermensual (MoM %), ticket promedio y número de pedidos.
-
-### Pestaña 4: "Feed de Acciones Operativas"
-- Motor reactivo de alertas categorizadas por criticidad:
-  - 🔴 **Crítico:** Quiebre inminente de stock en SKUs de alta rotación, o clientes B2B clave con > 20 días sin comprar.
-  - 🟠 **Advertencia:** Proveedores con margen bruto reducido (< 25%), o pedidos retenidos por deuda vencida en cuentas por cobrar.
-  - 🟢 **Oportunidad:** Clientes B2C listos para recompra preventiva (25 a 35 días) y promociones de venta cruzada.
-
-### Pestaña 5: "Bandejas WhatsApp Limpias"
-- Generador de mensajes personalizados para vendedores.
-- Selector por vendedor con filtros por tipo de gestión (Cobranza, Reactivación B2C, Oferta B2B, Preventiva).
-- Textos limpios sin caracteres deformados, listos para pulsar el botón verde **`Copiar Mensaje`** e interactuar con `https://wa.me/...`.
-
----
-
-## 8. INTEGRACIÓN CON PROSPECTOS Y CRM EXTERNO
-
-1. **Prospectos Actuales en Google Drive:**
-   - 2 archivos en Google Drive privado: uno asignado a Enrique García y otro a Carlos Cuadros (`Contactos de Farmacias`).
-   - El sistema analiza la tasa de conversión (leads contactados vs primeras compras cerradas con Pack S/ 533 o Plan B S/ 300).
-2. **Futuro CRM en Servidores Web (`qalikay.pe`):**
-   - El modelo de datos de clientes y carteras de este sistema se desacopla mediante contratos JSON limpios para que, cuando el CRM propio en `qalikay.pe` entre en producción, la ingesta de pedidos se conecte sin rediseñar la analítica.
+1. **Pestaña 1: Gestión por Vendedor**
+   - *Ficha Individual (Default):* Selector de vendedor, HUD 6 KPIs (Venta Mes, Meta, % Cumplimiento, Proyección Cierre, Ticket Promedio, Clientes Activos), Mix de SKUs y Proveedores, Top Clientes Clave.
+   - *Subvista Matriz Comparativa:* Tabla comparativa consolidada del equipo de ventas.
+2. **Pestaña 2: Gestión por Proveedor y SKU**
+   - *Ficha Individual (Default):* Selector de proveedor, **TOP 5 SKUs con valor en S/ y % share**, Gráfico de barras SVG de venta por vendedor para ese proveedor, y tarjeta de Lead Time, días de crédito y promociones.
+   - *Subvista Matriz de Proveedores:* Tabla consolidada con volumen y share total.
+3. **Pestaña 3: Comparativa Histórica**
+   - Gráfico multi-período SVG (meses cerrados + mes en curso) y tabla analítica mensual completa.
+4. **Pestaña 4: Feed de Acciones Operativas**
+   - Alertas en vivo (críticas, advertencias, oportunidades).
+5. **Pestaña 5: Bandejas WhatsApp Limpias**
+   - Textos formateados limpios listos para pulsar el botón verde **`Copiar Mensaje`** e interactuar con `https://wa.me/...`.
 
 ---
 
@@ -214,11 +194,11 @@ El frontend se materializa en [PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html](file:///
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                    AGENTE DIRECTOR TÉCNICO COMERCIAL Y ESPECIALISTA EN IA                          │
 │  - Workspace: Raíz del Proyecto (Estrategia Ventas Qali Kay)                                       │
-│  - Documentos Maestros: BLUEPRINT, .specify/memory/constitution.md, specs/001-...                  │
+│  - Documentos Maestros: BLUEPRINT v5.1, .specify/memory/constitution.md, specs/001-...             │
 │  - Ciclo Spec-Kit:                                                                                 │
-│    1. speckit-constitution (Gobernar los 7 principios)                                             │
+│    1. speckit-constitution (Gobernar los principios)                                               │
 │    2. speckit-specify      (Especificar features comerciales y ETL)                                │
-│    3. speckit-clarify      (Resolver vacíos y reglas de negocio con el Director General)          │
+│    3. speckit-clarify      (PASO MANDATORIO: Resolver vacíos y reglas de negocio con Cristian)     │
 │    4. speckit-plan         (Diseñar arquitectura modular, data contracts y esquemas)              │
 │    5. speckit-tasks        (Desglosar tareas atómicas ordenadas por dependencia)                   │
 │    6. speckit-analyze      (Validar consistencia y emitir validation-report.md)                    │
@@ -236,4 +216,4 @@ El frontend se materializa en [PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html](file:///
 └────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Version**: 5.0.0 (Master Definitivo) | **Ratificado**: 2026-10-23 | **Qali Kay S.A.C**
+**Version**: 5.1.0 (Master Definitivo) | **Ratificado**: 2026-10-23 | **Qali Kay S.A.C**
