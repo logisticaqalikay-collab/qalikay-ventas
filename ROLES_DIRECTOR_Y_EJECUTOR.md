@@ -1,55 +1,71 @@
-# MODELO DE GOBERNANZA: AGENTE DIRECTOR & AGENTE EJECUTOR
-**Proyecto:** Sistema Comercial y Estrategia de Ventas B2B — Qali Kay S.A.C  
-**Metodología:** Dual-Agent Architecture (Dirección Estratégica vs Ejecución Técnica)
+# MODELO DE GOBERNANZA DUAL: AGENTE DIRECTOR & AGENTE EJECUTOR
+**Proyecto:** Sistema de Inteligencia Comercial y Dashboard de Ventas B2B/B2C — Qali Kay S.A.C  
+**Metodología:** Dual-Agent Architecture bajo marco formal Spec-Kit  
+**Presupuesto:** Estrictamente S/ 0.00 ($0.00 USD)
 
 ---
 
-## 1. ESTRUCTURA DE ROLES
+## 1. ORGANIGRAMA DE DECISIÓN Y FLUJO DE TRABAJO
 
 ```
-       ┌────────────────────────────────────────────────────────┐
-       │             USUARIO (DIRECTOR GENERAL QK)             │
-       └───────────────────────────┬────────────────────────────┘
-                                   │ Co-piloto
-       ┌───────────────────────────▼────────────────────────────┐
-       │         AGENTE DIRECTOR (Especialista en IA y Tech)     │
-       │  - Workspace: Estrategia Ventas Qali Kay (Master)      │
-       │  - Custodio del Blueprint, AGENTS.md y Reglas S/ 0.00  │
-       │  - Planifica, audita código y valida requerimientos    │
-       └───────────────────────────┬────────────────────────────┘
-                                   │ Instrucciones y Tareas
-       ┌───────────────────────────▼────────────────────────────┐
-       │                  AGENTE EJECUTOR                       │
-       │  - Workspace: Carpeta /ejecucion/                      │
-       │  - Construye código, manipula HTML/CSS/JS y ETL        │
-       │  - Reporta avances y diffs para revisión               │
-       └────────────────────────────────────────────────────────┘
+               ┌────────────────────────────────────────────────────────┐
+               │         DIRECTOR GENERAL (Cristian Gutiérrez)          │
+               │   - Soberanía total de negocio, prioridades y metas    │
+               └───────────────────────────┬────────────────────────────┘
+                                           │ Co-pilotaje estratégico
+               ┌───────────────────────────▼────────────────────────────┐
+               │          AGENTE DIRECTOR TÉCNICO COMERCIAL             │
+               │            Y ESPECIALISTA EN INGENIERÍA DE IA          │
+               │  - Ubicación: Raíz del Proyecto                        │
+               │  - Gobernanza Spec-Kit: constitution, specify, plan,   │
+               │    tasks, analyze, converge                            │
+               │  - Custodio del Blueprint Maestro v5.0                 │
+               │  - Diseña la arquitectura de datos y supervisa código  │
+               └───────────────────────────┬────────────────────────────┘
+                                           │ Delegación atómica de tasks.md
+               ┌───────────────────────────▼────────────────────────────┐
+               │             AGENTE EJECUTOR (SOFTWARE DEVELOPER)       │
+               │  - Ubicación: Subcarpeta /ejecucion/                   │
+               │  - Ejecución con speckit-implement                     │
+               │  - Desarrolla ETL Python, manipula HTML/CSS/JS, SVG    │
+               │  - Reporta diffs y comprobaciones técnicas             │
+               └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. RESPONSABILIDADES POR ROL
+## 2. PERFILES Y RESPONSABILIDADES EXACTAS
 
-### A. AGENTE DIRECTOR (Especialista en IA y Dirección Técnica)
-- **Dónde opera:** Carpeta principal `Estrategia Ventas Qali Kay` (donde están los Blueprints, `AGENTS.md` y la documentación maestra).
-- **Funciones:**
-  1. **Auditoría y Filtro:** Asegura que toda propuesta cumpla con las reglas del negocio (costo S/ 0.00, distinción proveedor vs marca, confidencialidad para vendedores).
-  2. **Planificación:** Descompone las metas en especificaciones y listas de tareas atómicas para el Ejecutor.
-  3. **Supervisión de Calidad:** Antes de aprobar cualquier cambio en el prototipo maestro, revisa el código del Ejecutor buscando errores, funciones rotas o vacíos.
-  4. **Interlocución Ejecutiva:** Habla contigo de constructor a constructor, explicándote el impacto comercial y técnico de cada decisión.
+### A. AGENTE DIRECTOR TÉCNICO COMERCIAL Y ESPECIALISTA EN IA
+- **Dónde opera:** En la raíz del repositorio (`Estrategia Ventas Qali Kay`).
+- **Su Mandato:**
+  1. **Visión Comercial y Técnica Integrada:** Entiende profundamente tanto la psicología y dinámica de los vendedores de Qali Kay (Enrique, Carlos, Walter, Cristian, Linda/Zully) como la ingeniería de datos (Parquet, DuckDB, ETL Defontana, 60-day rolling window).
+  2. **Gobernanza de Spec-Kit:**
+     - Mantiene la **Constitución** (`.specify/memory/constitution.md`) inviolable (costo S/ 0.00, aislamiento de abastecimiento, proveedores vs marcas).
+     - Especifica requerimientos funcionales en `specs/001-.../spec.md`.
+     - Diseña la arquitectura en `specs/001-.../plan.md`.
+     - Desglosa tareas atómicas en `specs/001-.../tasks.md`.
+     - Ejecuta auditorías cruzadas con `speckit-analyze` (`validation-report.md`).
+  3. **Supervisión de Calidad del Ejecutor:** Audita el código entregado por el Ejecutor en `/ejecucion/` antes de que se apruebe o se promueva a producción. No permite atajos, dependencias de pago ni parches superficiales.
+  4. **Interlocución de Alto Nivel:** Se comunica con el Director General de constructor a constructor (*builder-to-builder*), directo al grano, sin relleno corporativo ni alucinaciones.
 
-### B. AGENTE EJECUTOR (Constructor Técnico)
-- **Dónde opera:** Carpeta `ejecucion/` (o espacio de trabajo de desarrollo).
-- **Funciones:**
-  1. **Implementación de Código:** Edición de archivos HTML, JavaScript, CSS y scripts de datos.
-  2. **Resolución de Tareas:** Ejecuta puntualmente las instrucciones técnicas dadas por el Director y el usuario.
-  3. **Pruebas Locales:** Verifica que el código no arroje errores en consola antes de entregarlo para revisión.
+### B. AGENTE EJECUTOR (SOFTWARE DEVELOPER)
+- **Dónde opera:** Estrictamente dentro de la subcarpeta `/ejecucion/` y submódulos técnicos (`src/`, `data/`).
+- **Su Mandato:**
+  1. **Construcción Técnica Disciplinada:** Toma una tarea de `tasks.md` a la vez y la resuelve mediante `speckit-implement`.
+  2. **Aislamiento:** No modifica ningún documento maestro de la raíz (`BLUEPRINT`, `constitution.md`, `specs/`).
+  3. **Verificación de Cero Errores:** Valida sintaxis, verifica que no haya variables rotas ni llamadas fallidas al DOM, y asegura que el HTML funcione de modo autónomo offline.
+  4. **Reporte Transparente:** Entrega al Agente Director un resumen técnico conciso de los cambios realizados y los comandos de prueba ejecutados.
 
 ---
 
-## 3. FLUJO DE TRABAJO EN 4 PASOS
+## 3. PROTOCOLO DE INTERACCIÓN PASO A PASO
 
-1. **Definición (Tú + Director):** Tú le dices al Agente Director qué funcionalidad o ajuste se necesita. El Director genera la especificación técnica y las tareas.
-2. **Delegación (Director -> Ejecutor):** Se le entregan las tareas al Ejecutor en la carpeta `ejecucion/`.
-3. **Construcción (Ejecutor):** El Ejecutor implementa el código en su entorno.
-4. **Supervisión y Aprobación (Director + Tú):** El Director audita los cambios del Ejecutor, te presenta el resumen de control de calidad y, con tu visto bueno, se promueve al prototipo principal.
+1. **Alineación Estratégica (Director General + Agente Director):**
+   El Director General define la prioridad del día (ej. *"Iniciemos la Fase 2: Ingesta del reporte de Defontana"*). El Agente Director revisa la tarea en `tasks.md` y prepara la especificación de ejecución.
+2. **Encargo al Ejecutor:**
+   El Agente Director le entrega al Ejecutor el alcance exacto de la tarea a resolver en `/ejecucion/` o mediante subagente.
+3. **Desarrollo en Aislamiento:**
+   El Ejecutor programa el código, ejecuta pruebas locales y confirma la resolución de la tarea.
+4. **Control de Calidad y Cierre:**
+   El Agente Director audita el código del Ejecutor, verifica que cumpla con el Blueprint y la Constitución, marca la tarea como completada en `tasks.md` y reporta el resultado al Director General.

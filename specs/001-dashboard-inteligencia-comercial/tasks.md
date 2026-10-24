@@ -1,19 +1,51 @@
-# Tasks: 001 - Dashboard de Inteligencia Comercial y Estrategia de Ventas B2B
+# Tasks: 001 - Sistema de Inteligencia Comercial y Dashboard de Ventas B2B/B2C
 
-## Fase 1: Arquitectura y Prototipado Base (Completado)
-- [x] T001: Diseñar estructura de navegación de 5 pestañas en HTML/CSS.
-- [x] T002: Implementar Pestaña 1 "Gestión por Vendedor" con Ficha Individual (HUD 6 KPIs + Mix SKUs y Proveedores + Clientes Clave) y Matriz de Vendedores.
-- [x] T003: Implementar Pestaña 2 "Gestión por Proveedor y SKU" con Ficha Individual (TOP 5 Productos con Soles y Share % + Gráfico SVG + Lead time) y Matriz de Proveedores.
-- [x] T004: Implementar Pestaña 3 "Comparativa Histórica" con gráfico SVG multi-período y tabla analítica mensual.
-- [x] T005: Implementar Pestaña 4 "Feed de Acciones Operativas" con alertas automáticas.
-- [x] T006: Implementar Pestaña 5 "Bandejas WhatsApp" con botón de copiado limpio.
+**Código:** `QK-VENTAS-001`  
+**Metodología:** Spec-Kit (`tasks` ➔ `analyze` ➔ `implement`)
 
-## Fase 2: Conexión con Datos Reales de Defontana (Pendiente de Ejecución)
-- [ ] T007: Diseñar la interfaz de carga de archivos (Dropzone/Input file) para importar el reporte `INF_VENTAS_DETALLADAS` de Defontana directamente en el Dashboard.
-- [ ] T008: Incorporar parser de Excel/CSV en cliente (`xlsx.full.min.js` embebido) para procesar columnas: Fecha, Documento, RUC, Cliente, Vendedor, SKU, Descripción, Monto Neto y Margen.
-- [ ] T009: Configurar la tabla de equivalencias para asociar cada marca (ej. *D'Nattive*) a su Proveedor titular oficial.
-- [ ] T010: Conectar el cálculo automático de los 6 KPIs y los TOP 5 productos por proveedor con la data parseada de Defontana.
+---
 
-## Fase 3: Despliegue y Validación (Pendiente)
-- [ ] T011: Auditar experiencia visual y móvil con estándar de diseño `impeccable`.
-- [ ] T012: Publicar prototipo en URL web gratuita (Vercel o GitHub Pages) para acceso directivo sin costo.
+## FASE 1: ARQUITECTURA Y PROTOTIPADO VISUAL BASE (COMPLETADO ✅)
+- [x] **T001**: Diseñar la estructura de navegación de las 5 pestañas operativas en HTML5 y CSS3 autónomo.
+- [x] **T002**: Implementar Pestaña 1 "Gestión por Vendedor" con Ficha Individual (HUD 6 KPIs + Mix SKUs y Proveedores + Clientes Clave) y Matriz de Vendedores.
+- [x] **T003**: Implementar Pestaña 2 "Gestión por Proveedor y SKU" con Ficha Individual (TOP 5 SKUs en S/ y % share + Gráfico SVG + Lead time) y Matriz de Proveedores.
+- [x] **T004**: Implementar Pestaña 3 "Comparativa Histórica" con gráfico evolutivo SVG multi-período y tabla analítica mensual.
+- [x] **T005**: Implementar Pestaña 4 "Feed de Acciones Operativas" con categorización de alertas por severidad.
+- [x] **T006**: Implementar Pestaña 5 "Bandejas WhatsApp" con generador de textos limpios y botón `Copiar Mensaje`.
+
+---
+
+## FASE 2: INGESTA, ALMACÉN PARQUET Y VENTANA RODANTE DE 60 DÍAS (EN CURSO 🟡)
+- [ ] **T007**: Crear el script de ingesta `src/etl_ventas_defontana.py` para parsear el reporte `INF_VENTAS_DETALLADAS` (Excel/CSV/HTML de Defontana), normalizando fechas, tipos numéricos, clientes, RUC y montos netos.
+- [ ] **T008**: Implementar la lógica de deducción de Notas de Crédito (NC), restando unidades y montos netos del vendedor y producto correspondiente.
+- [ ] **T009**: Implementar el filtro de exclusión estricto para las 3 cuentas catalogadas como *"Consumo Interno"*.
+- [ ] **T010**: Construir el módulo de almacenamiento `data/ventas_2025_2026.parquet` y el algoritmo de ventana rodante de 60 días con `upsert` por clave compuesta `Nombre_Doc + Nro_Doc + Cod_Producto`.
+- [ ] **T011**: Configurar el maestro de equivalencias de Marcas a Proveedores Titulares (ej. *D'Nattive* al laboratorio titular, *Oriundos* a *Nutrivas*, *Santiveri* a *Molinos del Mundo*).
+
+---
+
+## FASE 3: MOTOR DE REGLAS DE CARTERAS Y GESTIÓN DE ALERTAS (PENDIENTE ⚪)
+- [ ] **T012**: Implementar la segmentación determinista de las 6 carteras comerciales:
+  - *Enrique García* (B2B campo).
+  - *Walter Gutiérrez* (excluyendo automáticamente la cuenta UNALM).
+  - *Cristian Gutiérrez* (excluyendo automáticamente la cuenta Organa; incluyendo *Whitnin Tesen* en Piura).
+  - *Carlos Cuadros* (fusionando la cartera histórica de Joel García).
+  - *Linda / Zully — B2B* (comprobantes > S/ 400.00).
+  - *Linda / Zully — B2C* (comprobantes <= S/ 400.00).
+- [ ] **T013**: Implementar el motor de ciclo B2C de 25 días (Alertas Preventivas días 25–35, Seguimiento días 36–60, Rescate > 60 días).
+- [ ] **T014**: Implementar el motor de ciclo B2B de 15 días (Alerta preventiva día 10, fuga día 20, anomalía de caída de ventas >= 30%).
+- [ ] **T015**: Implementar el cruce de cartera vencida con `CUENTAS POR COBRAR.xlsx` para disparar alertas de cobranza y condición de pago previo.
+- [ ] **T016**: Cargar la matriz de Lead Times por proveedor (Rápidos 1-2d, Molinos del Mundo miércoles, demoras mayores, proveedores en liquidación).
+
+---
+
+## FASE 4: VINCULACIÓN AL DASHBOARD (FRONTEND BINDING) (PENDIENTE ⚪)
+- [ ] **T017**: Crear el script `src/exportar_datos_dashboard.py` que consolida los cálculos y genera el snapshot reactivo `data/datos_comerciales.json`.
+- [ ] **T018**: Conectar `PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html` a la lectura de `data/datos_comerciales.json`, reemplazando el objeto mock en memoria.
+- [ ] **T019**: Incorporar en el Dashboard un componente visual de carga (Dropzone) con SheetJS embebido (`xlsx.full.min.js` offline) para permitir importar reportes de Defontana directamente desde la interfaz web sin terminal.
+
+---
+
+## FASE 5: AUDITORÍA UX Y DESPLIEGUE CLOUD (PENDIENTE ⚪)
+- [ ] **T020**: Auditar el Dashboard utilizando el estándar `impeccable` en modo `Operate` (alto contraste, tipografía no menor a 12px, números tabulares alineados a la derecha y touch targets móviles de WhatsApp).
+- [ ] **T021**: Configurar el despliegue automático gratuito en GitHub Pages / Vercel para acceso directivo en la nube (S/ 0.00).
