@@ -57,24 +57,31 @@ if !ERRORLEVEL! NEQ 0 (
 echo      * [OK] Dashboard HTML actualizado y listo para visualizacion.
 
 echo.
-echo [4/4] Verificando sincronizacion remota con Git [Vercel Cloud]...
+echo [4/4] Verificando sincronizacion remota con Git [Nube GitHub / Vercel]...
+set "GIT_CMD=git"
 where git >nul 2>&1
 if errorlevel 1 (
-    echo      * [INFO] Git no disponible en PATH. Sincronizacion local completada con exito.
-    goto :fin_sync
+    if exist "%LOCALAPPDATA%\Programs\Git\cmd\git.exe" (
+        set "GIT_CMD=%LOCALAPPDATA%\Programs\Git\cmd\git.exe"
+    ) else (
+        echo      * [INFO] Git no disponible en PATH. Sincronizacion local completada con exito.
+        goto :fin_sync
+    )
 )
 
-git remote get-url origin >nul 2>&1
+"%GIT_CMD%" remote get-url origin >nul 2>&1
 if errorlevel 1 (
     echo      * [INFO] Repositorio local sin remote origin configurado. Sincronizacion local completada.
     goto :fin_sync
 )
 
 echo      * Realizando commit y push automatico a rama principal...
-git add ejecucion\PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html data\datos_comerciales.json >> "%LOG_FILE%" 2>&1
-git commit -m "Auto-sync: Sincronizacion comercial RPA Defontana [%date% %time%]" >> "%LOG_FILE%" 2>&1
-git push origin HEAD >> "%LOG_FILE%" 2>&1
-echo      * [OK] Cambios enviados a repositorio remoto para despliegue automatico en Vercel.
+set "GIT_TERMINAL_PROMPT=0"
+set "GCM_INTERACTIVE=never"
+"%GIT_CMD%" add ejecucion\PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html data\datos_comerciales.json index.html >> "%LOG_FILE%" 2>&1
+"%GIT_CMD%" commit -m "Auto-sync: Sincronizacion comercial RPA Defontana [%date% %time%]" >> "%LOG_FILE%" 2>&1
+"%GIT_CMD%" push origin main >> "%LOG_FILE%" 2>&1
+echo      * [OK] Cambios enviados a repositorio remoto para despliegue automatico en Vercel / GitHub Pages.
 
 :fin_sync
 
