@@ -1,0 +1,123 @@
+{
+  "version": "2026-10",
+  "descripcion": "Catálogo Oficial de Promociones y Bonificaciones Vigentes - Qali Kay S.A.C.",
+  "promociones": [
+    {
+      "id": "PROMO-NAN-001",
+      "proveedor": "NUTRIVAS",
+      "marca": "NANITA",
+      "sku": "NAN-036",
+      "descripcion_sku": "NAD+ Resveratrol 60 cap Nanita",
+      "tipo_promo": "BONIFICACION",
+      "mecanica": "12+1",
+      "descripcion": "Por la compra de 12 unidades lleva 1 unidad bonificada sin costo.",
+      "vigencia": "Campaña activa 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-NAN-002",
+      "proveedor": "NUTRIVAS",
+      "marca": "NANITA",
+      "sku": "NAN-079",
+      "descripcion_sku": "Aceite de Semillas de Calabaza 250ml Nanita",
+      "tipo_promo": "BONIFICACION",
+      "mecanica": "6+1",
+      "descripcion": "Lleva 6 unidades y obtén 1 unidad gratis de la misma línea.",
+      "vigencia": "Campaña activa 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-NAN-003",
+      "proveedor": "NUTRIVAS",
+      "marca": "NANITA",
+      "sku": "NAN-081",
+      "descripcion_sku": "Selenium Quelado 100mcg x 100 cap Nanita",
+      "tipo_promo": "BONIFICACION",
+      "mecanica": "6+1",
+      "descripcion": "Lleva 6 unidades y recibe 1 unidad bonificada para rotación en anaquel.",
+      "vigencia": "Campaña activa 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": false
+    },
+    {
+      "id": "PROMO-NAN-004",
+      "proveedor": "NUTRIVAS",
+      "marca": "NANITA",
+      "sku": "NAN-073",
+      "descripcion_sku": "Colágeno Multipéptidos Premium 400g Nanita",
+      "tipo_promo": "BONIFICACION",
+      "mecanica": "6+1",
+      "descripcion": "Bonificación 6+1 activa en canales de farmacias y belleza.",
+      "vigencia": "Campaña activa 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-VIV-001",
+      "proveedor": "FIBRA FRUT",
+      "marca": "VIVAFRUT",
+      "sku": "VIV-020",
+      "descripcion_sku": "Pack Mixto Bebidas VivaFrut x 6 unidades",
+      "tipo_promo": "PACK_ENTRADA",
+      "mecanica": "PRECIO_ESPECIAL",
+      "descripcion": "Pack degustación y entrada a puntos nuevos con 15% de descuento por display.",
+      "vigencia": "Permanente para clientes nuevos",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-MOL-001",
+      "proveedor": "MOLINOS DEL MUNDO",
+      "marca": "MOLINOS DEL MUNDO",
+      "sku": "GENERAL-MOL",
+      "descripcion_sku": "Pastas, Panes y Harinas Sin Gluten",
+      "tipo_promo": "DESCUENTO_VOLUMEN",
+      "mecanica": "DESCUENTO_CAJA",
+      "descripcion": "Descuento escalonado del 8% en compras por caja cerrada (entrega los miércoles).",
+      "vigencia": "Entregas programadas miércoles",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-QOR-001",
+      "proveedor": "QORINKA",
+      "marca": "QORINKA",
+      "sku": "GENERAL-QOR",
+      "descripcion_sku": "Sal de Maras y Condimenteros Qorinka",
+      "tipo_promo": "ESCALA_MAYORISTA",
+      "mecanica": "ESCALA_DISPLAY",
+      "descripcion": "Tarifa mayorista reducida a partir de display cerrado de 12 unidades.",
+      "vigencia": "Permanente 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": false
+    },
+    {
+      "id": "PROMO-AMZ-001",
+      "proveedor": "AMAZON ANDES",
+      "marca": "AMAZON ANDES",
+      "sku": "GENERAL-AMZ",
+      "descripcion_sku": "Cápsulas de Maca Negra, Maca Roja y Aguaje",
+      "tipo_promo": "BONIFICACION_VOLUMEN",
+      "mecanica": "10+1_MIXTO",
+      "descripcion": "10+1 combinable en cápsulas orgánicas Amazon Andes.",
+      "vigencia": "Campaña activa 2026",
+      "canal_aplicable": ["B2B"],
+      "destacado": true
+    },
+    {
+      "id": "PROMO-B2C-001",
+      "proveedor": "NUTRIVAS",
+      "marca": "GONMI",
+      "sku": "GON-001",
+      "descripcion_sku": "Gomitas Buenas Noches (Melatonina) 130u",
+      "tipo_promo": "B2C_RECOMPRA",
+      "mecanica": "ENVIO_GRATIS_2DO_FRASCO",
+      "descripcion": "Envío gratis a partir del segundo frasco en recompra habitual.",
+      "vigencia": "Campaña permanente B2C",
+      "canal_aplicable": ["B2C"],
+      "destacado": true
+    }
+  ]
+}

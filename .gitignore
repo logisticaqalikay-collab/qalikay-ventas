@@ -1,0 +1,38 @@
+# ==============================================================================
+# .gitignore - Sistema de Inteligencia Comercial Qali Kay S.A.C.
+# ==============================================================================
+
+# Entorno virtual de Python y dependencias
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Reportes crudos pesados de Defontana (15 MB+)
+data/*.xls
+data/*.xlsx
+!data/maestro_articulos_abastecimiento.csv
+
+# Archivo columnar Parquet local de produccion
+data/*.parquet
+data/ventas_2025_2026.parquet
+
+# Archivos de cache y sincronizacion intermedia
+data/*_cache.*
+data/kardex_resumido_cache.csv
+data/raw_ventas_cache.csv
+data/sync_status_cache.json
+
+# Registros de log y depuracion
+logs/
+*.log
+
+# Respaldos y temporales
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini
+scratch/

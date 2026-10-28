@@ -75,7 +75,7 @@
 - Script Python para ingesta del reporte `INF_VENTAS_DETALLADAS` de Defontana (ventana de 90 días).
 - Normalización de tipos de datos, deducción de Notas de Crédito y filtro de *Consumo Interno*.
 - Implementación de la ventana rodante de 90 días sobre `data/ventas_2025_2026.parquet`.
-- Maestro de mapeo de marcas hacia proveedores titulares (ej. *D'Nattive* al laboratorio titular).
+- Maestro de artículos oficial de abastecimiento (`RAW_ARTICULOS`, 455 SKUs) para asignación determinista de SKU a Proveedor Titular.
 
 ### Fase 3: Motor de Reglas Comerciales y Carteras (En curso 🟡)
 - Segmentación determinista de las 6 carteras:
@@ -86,13 +86,23 @@
   - Linda/Zully B2B (> S/ 400).
   - Linda/Zully B2C (<= S/ 400).
 - Motor de alertas B2C (ciclos de 25 días, preventivas 25-35d, vencidas 36-60d, rescate >60d).
-- Motor de alertas B2B (15 días de reposición, preventivas a los 10d, fuga a los 20d, caída >=30%).
-- Cruce con `CUENTAS POR COBRAR.xlsx` para alertas de cobranza.
+- Motor de Frecuencia B2B por madurez de compras:
+  - Clientes Nuevos (1 a 3 compras históricas): Protocolo de onboarding a los 7 días (post-venta), 15 días (rotación inicial y promos) y 30 días (rescate/cierre).
+  - Clientes Recurrentes (después de la 4ta compra registrada): Frecuencia dinámica individual ($N$), alerta preventiva $[N-3 \text{ a } N]$, alerta de fuga $N+5$ días y alerta de caída $\ge 30\%$.
+- Motor de Recompra B2B Inteligente: Cruce de Canasta histórica de compras + Stock en almacén (`Kardex_Resumido`) + Lead Time del proveedor + Promociones vigentes de campaña (`promociones_vigentes.json`).
+- Cruce con `CUENTAS POR COBRAR.xlsx` para alertas de cobranza y condición de pago.
 
 ### Fase 4: Enlace de Datos Reales al Dashboard (Frontend Binding)
 - Sustitución del mock data en JavaScript por la lectura dinámica de `data/datos_comerciales.json`.
 - Dropzone / botón de carga en el dashboard para que el usuario pueda arrastrar directamente el archivo de Defontana en el navegador (usando SheetJS embebido) si desea operar sin consola Python.
 
-### Fase 5: Auditoría UX con Impeccable y Despliegue en la Nube
+### Fase 5: Auditoría UX con Impeccable y Despliegue en la Nube (Completado ✅)
 - Auditoría UX con skill `impeccable` en modo `Operate` (alto contraste, jerarquía visual ejecutiva, touch targets de WhatsApp > 48px en móvil).
 - Despliegue en GitHub Pages o Vercel para enlace web directivo permanente.
+
+### Fase 6: Refinamiento Ejecutivo de Reglas de Negocio v2 y Exportaciones Analíticas a Excel (Completado ✅)
+- **Reclasificación Estricta Linda B2B vs B2C:** Evaluar exclusivamente si el comprobante (`Nro_Doc`, factura o boleta) supera `S/ 400.00` (eliminando el criterio por RUC 20 o suma por día).
+- **Recomendación de 3 Productos por Cliente:** En el motor de recompra (`src/motor_reglas_carteras.py`) y en el generador de Bandejas de Salida de WhatsApp y Feed (`src/exportar_datos_dashboard.py`), garantizar 3 SKUs recomendados por cliente (Top 3 habituales + completado inteligente con SKUs líderes en stock cuando el cliente tiene $<3$ productos en su historial).
+- **HUD de Clientes con Deuda Vencida (53 clientes · S/ 162,464.07) + Tabla y Exportación Excel:** Contabilizar exclusivamente clientes con deuda vencida real en `Cuentas por cobrar 2026.xlsx`, desplegar tabla consolidada al hacer clic y permitir descarga en `.xlsx` vía SheetJS (`XLSX.writeFile`), además de un botón de descarga `.xlsx` del detalle de deuda vencida dentro de la Ficha Individual de cada vendedor.
+- **Ventana Operativa de 90 Días en el Feed para Linda B2C + Descarga de Histórico Total:** Mostrar en el Feed de Acciones Operativas únicamente los clientes de los últimos 90 días de Linda B2C que requieran acción, y habilitar un botón de exportación `.xlsx` con el análisis completo de los `877` clientes históricos de Linda B2C de todo el tiempo.
+- **Evolución de 6 Meses 2026 + Promedio Activo 2025, Proveedores del Maestro y Responsive Móvil:** Consolidado en `src/exportar_datos_dashboard.py` y `ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html`.

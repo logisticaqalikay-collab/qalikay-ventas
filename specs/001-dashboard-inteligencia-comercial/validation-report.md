@@ -17,13 +17,14 @@
 | **FR-03** | Ingesta de Reporte Defontana `INF_VENTAS_DETALLADAS` (Reutilización RPA) | T007 | 🟡 PLANIFICADA |
 | **FR-04** | Deducción Estricta de Notas de Crédito (NC) | T008 | 🟡 PLANIFICADA |
 | **FR-05** | Aislamiento Total con Abastecimiento (Solo lectura de descargas) | T007, T010 | ✅ VERIFICADO |
-| **FR-06** | Exclusión de las 3 Cuentas de Consumo Interno | T009 | 🟡 PLANIFICADA |
+| **FR-06** | Exclusión de las 6 Cuentas de Consumo Interno | T009 | 🟡 PLANIFICADA |
 | **FR-07** | Motor de las 6 Carteras (Exclusiones UNALM, Organa, Fusión Joel) | T012 | 🟡 PLANIFICADA |
-| **FR-08** | Mapeo de Marcas a Proveedores Titulares (ej. D'Nattive) | T011 | 🟡 PLANIFICADA |
+| **FR-08** | Mapeo Oficial SKU ➔ Proveedor desde Maestro de Artículos (RAW_ARTICULOS) | T011 | 🟡 PLANIFICADA |
 | **FR-09** | Matriz de Lead Times por Proveedor | T016 | 🟡 PLANIFICADA |
 | **FR-10** | Control de Cobranza (`CUENTAS POR COBRAR.xlsx`) y Crédito (6 pedidos) | T015 | 🟡 PLANIFICADA |
 | **FR-11** | Ciclo B2C de 25 Días (Preventivas 25-35d, Seguimiento 36-60d, Rescate >60d) | T013 | 🟡 PLANIFICADA |
-| **FR-12** | Ciclo B2B de 15 Días (Preventivas día 10, Fuga día 20, Anomalía -30%) | T014 | 🟡 PLANIFICADA |
+| **FR-12** | Frecuencia B2B: Nuevos (1-3 compras: 7-15-30d) vs Recurrentes (>=4 compras: N individual) | T014 | 🟡 PLANIFICADA |
+| **FR-12b**| Motor de Recompra B2B Inteligente (Canasta + Stock Kardex + Lead Time + Promociones) | T014b | 🟡 PLANIFICADA |
 | **FR-13** | Pestaña 1: Ficha Individual Vendedor (HUD 6 KPIs) y Matriz | T001, T002, T018 | ✅ FASE 1 BASE |
 | **FR-14** | Pestaña 2: Ficha Proveedor (TOP 5 SKUs en S/ y % share) y Matriz | T001, T003, T018 | ✅ FASE 1 BASE |
 | **FR-15** | Pestaña 3: Comparativa Histórica Multi-período SVG | T001, T004, T018 | ✅ FASE 1 BASE |

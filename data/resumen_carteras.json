@@ -1,0 +1,65 @@
+{
+  "fecha_corte": "2026-10-26",
+  "carteras": {
+    "carlos-cuadros": {
+      "nombre": "carlos-cuadros",
+      "transacciones_totales": 1158,
+      "transacciones_ficha": 1158,
+      "unidades_totales": 5807.0,
+      "unidades_ficha": 5807.0,
+      "venta_neta_total": 70512.15,
+      "venta_neta_ficha": 70512.15,
+      "clientes_activos": 50
+    },
+    "cristian-gutierrez": {
+      "nombre": "cristian-gutierrez",
+      "transacciones_totales": 20265,
+      "transacciones_ficha": 6222,
+      "unidades_totales": 104386.0,
+      "unidades_ficha": 36921.0,
+      "venta_neta_total": 2107469.72,
+      "venta_neta_ficha": 528310.7,
+      "clientes_activos": 93
+    },
+    "enrique-garcia": {
+      "nombre": "enrique-garcia",
+      "transacciones_totales": 4386,
+      "transacciones_ficha": 4386,
+      "unidades_totales": 24989.0,
+      "unidades_ficha": 24989.0,
+      "venta_neta_total": 270947.38,
+      "venta_neta_ficha": 270947.38,
+      "clientes_activos": 231
+    },
+    "walter-gutierrez": {
+      "nombre": "walter-gutierrez",
+      "transacciones_totales": 8323,
+      "transacciones_ficha": 6966,
+      "unidades_totales": 39002.0,
+      "unidades_ficha": 34454.0,
+      "venta_neta_total": 589977.41,
+      "venta_neta_ficha": 521126.43,
+      "clientes_activos": 48
+    },
+    "zully-b2b": {
+      "nombre": "zully-b2b",
+      "transacciones_totales": 983,
+      "transacciones_ficha": 983,
+      "unidades_totales": 5078.0,
+      "unidades_ficha": 5078.0,
+      "venta_neta_total": 122685.93,
+      "venta_neta_ficha": 122685.93,
+      "clientes_activos": 45
+    },
+    "zully-b2c": {
+      "nombre": "zully-b2c",
+      "transacciones_totales": 2611,
+      "transacciones_ficha": 2611,
+      "unidades_totales": 3843.0,
+      "unidades_ficha": 3843.0,
+      "venta_neta_total": 127378.45,
+      "venta_neta_ficha": 127378.45,
+      "clientes_activos": 898
+    }
+  }
+}
