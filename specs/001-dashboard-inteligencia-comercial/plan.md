@@ -106,3 +106,17 @@
 - **HUD de Clientes con Deuda Vencida (53 clientes · S/ 162,464.07) + Tabla y Exportación Excel:** Contabilizar exclusivamente clientes con deuda vencida real en `Cuentas por cobrar 2026.xlsx`, desplegar tabla consolidada al hacer clic y permitir descarga en `.xlsx` vía SheetJS (`XLSX.writeFile`), además de un botón de descarga `.xlsx` del detalle de deuda vencida dentro de la Ficha Individual de cada vendedor.
 - **Ventana Operativa de 90 Días en el Feed para Linda B2C + Descarga de Histórico Total:** Mostrar en el Feed de Acciones Operativas únicamente los clientes de los últimos 90 días de Linda B2C que requieran acción, y habilitar un botón de exportación `.xlsx` con el análisis completo de los `877` clientes históricos de Linda B2C de todo el tiempo.
 - **Evolución de 6 Meses 2026 + Promedio Activo 2025, Proveedores del Maestro y Responsive Móvil:** Consolidado en `src/exportar_datos_dashboard.py` y `ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html`.
+
+### Fase 7: Sincronización Total, Cero Alucinaciones y Reglas Avanzadas de Negocio (En Curso 🟡)
+- **Aislamiento Multi-Ruta de Cuentas por Cobrar:** Soporte dinámico para rutas de OneDrive en PC cguti y PC USER (`C:\Users\USER\OneDrive\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx`).
+- **Ingesta XLSX de Google Sheets:** Descarga `/export?format=xlsx` de `RAW_VENTAS` en `etl_ventas_defontana.py` preservando códigos alfanuméricos (`MERMULTCENT`, `MERSAMARI`, etc.) y recuperando decimales corrompidos a fecha (`float(f"{dt.day}.{dt.month:02d}")`).
+- **Exclusión de Facturas Gratuitas:** Descarte de documentos `01 Factura Electrónica Gratuita Sin IGV` en cálculo de ventas comerciales.
+- **Detección de Discrepancias CxC vs Defontana:** Identificación de documentos activos en CxC pero anulados/inexistentes en Defontana (ej. `F001-6208`).
+- **Regla Documentos A Cuenta Vencidos:** Todo documento con `Estado == "VENCIDA"` o (`Estado == "A CUENTA"` con `Días vencidos > 0` y `Saldo > 0.50`) suma a deuda y conteo de documentos vencidos.
+- **Asignación Soberana de PITRU S.A.C.:** RUC `20501997545` fijado a la cartera de Carlos Cuadros (`carlos-cuadros`).
+- **Eliminación Total de Alucinaciones en Canasta:** Supresión de `FALLBACK_STAR_SKUS`. Solo se muestran SKUs que el cliente realmente compró.
+- **Redacción Desacoplada de Promociones:** Desvincular canasta del cliente de promociones de campaña. Nombrar explícitamente el SKU en bonificación 12+1 o 6+1 (solo B2B).
+- **Promoción Estandarizada B2C:** *"20% de descuento en la 2da unidad de tu próxima compra"* para clientes inactivos de Linda B2C.
+- **Modal de 9 Campañas en HUD:** Modal interactivo para inspeccionar catálogo completo de promociones vigentes.
+- **Filtro y Archivo Inactivos > 120 Días con Reincorporación Manual:** Segregación de inactivos $> 120$d y botón interactivo UI para retornar a acciones diarias.
+- **Exclusión de Colaboradores:** Normalización de DNIs con/sin cero inicial y exclusión de Enrique, Junnior, Kelly y Norexglis.

@@ -21,24 +21,28 @@ Construir el sistema integral de inteligencia comercial de Qali Kay S.A.C, que c
 - **FR-03 (Ingesta de Reportes Defontana Existentes):** Ingerir en modo solo lectura el reporte `INF_VENTAS_DETALLADAS` (.xls/.xlsx/.csv exportado de Defontana por el RPA de abastecimiento), extrayendo fecha, documento, RUC, cliente, vendedor, SKU, cantidad, venta neta sin IGV, condición de pago, fecha de vencimiento y línea. Formato de origen: tabla HTML codificada en `cp1252` (`windows-1252`) exportada por Defontana.
 - **FR-04 (Deducción Estricta de Notas de Crédito):** Toda Nota de Crédito (NC, tipo `07 NC...`) resta automáticamente del volumen de ventas netas y unidades del vendedor, cliente y producto. Dado que Defontana exporta el 100% de las NC con cantidades y montos en signo negativo nativo, la deducción se realiza mediante suma algebraica directa ($\sum \text{Total Detalle}$ y $\sum \text{Cantidad}$), prohibiendo la inversión de signo para evitar doble resta. Los comprobantes anulados con NC quedan invalidados para el cómputo de pedidos de evaluación crediticia.
 - **FR-05 (Aislamiento Total de Abastecimiento):** Cero dependencia de código ni alteración de scripts de `qalikay-abastecimiento`.
-- **FR-06 (Exclusión de Consumo Interno):** Se filtran y excluyen estrictamente las 6 cuentas catalogadas como *"Consumo Interno"* para no distorsionar ventas ni ticket medio:
+- **FR-06 (Exclusión de Consumo Interno y Colaboradores):** Se filtran y excluyen estrictamente las cuentas catalogadas como *"Consumo Interno y Colaboradores"* para no distorsionar ventas ni ticket medio:
   1. DNI `73615353` — Cristian Gutiérrez (`CRISTIAN ANDRES`)
-  2. DNI `06024456` — Walter Gutiérrez (`GUTIERREZ ARRESE WALTER`)
+  2. DNI `06024456` / `6024456` — Walter Gutiérrez (`GUTIERREZ ARRESE WALTER`)
   3. DNI `76423008` — Carlos Cuadros (`CUADROS VALERIANO CARLOS ALBERTO`)
-  4. DNI `09072925` — Linda Ríos (`Linda Ríos`)
+  4. DNI `09072925` / `9072925` — Linda Ríos (`Linda Ríos`)
   5. DNI `72164623` — Luis Gamarra (`Luis Angel Gamarra Calle`)
   6. DNI `72931481` — Carlos Antonio (`Carlos Antonio Ureta Abanto`)
+  7. DNI `42072907` — Enrique García (`GARCIA MEJIA ENRIQUE OMAR`)
+  8. DNI `49062951` — Junnior Castañeda (`JUNNIOR ANDRES JESUS CASTAÑEDA MEZA`)
+  9. DNI `76738275` — Kelly Ruiz (`KELLY SOLANGE RUIZ BENDEZU`)
+  10. DNI/Doc `003166920` / `3166920` — Norexglis Guaracaran (`NOREXGLIS ESTHER GUARACARAN ARANGUREN`)
 
 ### MÓDULO 2: SEGMENTACIÓN DE CARTERAS Y REGLAS DE NEGOCIO
 - **FR-07 (Motor de las 6 Carteras y Reglas de Atribución):**
   1. *Enrique García:* Ventas B2B campo (`222` clientes en cartera).
   2. *Walter Gutiérrez:* Clientes por afinidad personal (**la cuenta UNALM / FUNDEAGRO RUC `20101259014` se incluye al 100% en métricas de venta, HUD general, Pestaña 1, Pestaña 2 y Pestaña 3; se excluye únicamente de las Alertas en Pestaña 4 y Bandejas WhatsApp en Pestaña 5**).
   3. *Cristian Gutiérrez (Mi Cartera):* Cuentas estratégicas clave (**las 9 franquicias/RUCs de ORGANA se incluyen al 100% en métricas de venta, HUD general, Pestaña 1, Pestaña 2 y Pestaña 3; se excluyen únicamente de las Alertas en Pestaña 4 y Bandejas WhatsApp en Pestaña 5**; **incluye a *Whitnin Tesen* en Piura tanto con DNI `48517168` como con RUC `10485171687`**).
-  4. *Carlos Cuadros:* Ventas B2B campo (**fusionando su cartera con el 100% de la cartera histórica del ex-vendedor Joel García**).
+  4. *Carlos Cuadros:* Ventas B2B campo (**fusionando su cartera con el 100% de la cartera histórica del ex-vendedor Joel García**; **incluye por regla soberana la cuenta PITRU SOCIEDAD ANONIMA CERRADA RUC 20501997545 / SAYARIQ**).
   5. *Linda / Zully — B2B (`Rep. Comercial` + `Zully Rios`):* Clasificación **exclusivamente por el monto neto de la Factura o Boleta (`Nro_Doc`) > S/ 400.00** (sin clasificar por prefijo RUC 20 ni por suma de varios comprobantes del día). Un cliente de la cartera de Linda se clasifica como **B2B** si y solo si registra al menos una Factura o Boleta (`Nro_Doc`) con venta neta **> S/ 400.00**.
   6. *Linda / Zully — B2C (`Rep. Comercial` + `Zully Rios`):* Comprobantes (`Nro_Doc`) con venta neta **<= S/ 400.00**. Un cliente de la cartera de Linda se clasifica como **B2C** si ninguna de sus Facturas o Boletas (`Nro_Doc`) supera **S/ 400.00**.
   - *Regla Clientes Multi-Vendedor (D2):* Para seguimiento y alertas actuales, el cliente se asigna al **último vendedor que le facturó venta neta positiva** (aplicando overrides de ley: Joel $\to$ Carlos Cuadros; Whitnin DNI/RUC 10 $\to$ Cristian; Rep. Comercial $\to$ Linda/Zully).
-- **FR-08 (Maestro de Proveedores Oficial desde RPA de Abastecimiento — Sin Marcas):** La relación oficial de cada SKU con su Proveedor Titular (laboratorio fabricante o importador) se obtiene estrictamente del **Maestro de Artículos de Abastecimiento** (`RAW_ARTICULOS` en `data/maestro_articulos_abastecimiento.csv`). Queda prohibido listar marcas comerciales (*D'Nattive*, *Nanita / NNF*, *VivaFrut*) como proveedores en la Pestaña 2; únicamente se listan los Proveedores Oficiales del Maestro (`NUTRIVAS`, `MOLINOS DEL MUNDO`, `PECADITOS INTEGRALES`, `AMAZON ANDES`, `WILD FOODS`, `QORINKA`, `ANDES CRISP`, `INKA COMEX`, `OLIVO DE ORO`, `DEPURATÉ`, `NOA LIFE`, `FIBRA FRUT`, `QORI`, `TAURI`, `OTROS PROVEEDORES`) y sus SKUs.
+- **FR-08 (Maestro de Proveedores Oficial y Corrección Santiveri):** La relación oficial de cada SKU con su Proveedor Titular se obtiene del Maestro de Artículos. Se corrige explícitamente la línea `SANTIVERI` (prefijo `SANT`): pertenece a `MOLINOS DEL MUNDO` y NO a Nutrivas.  La relación oficial de cada SKU con su Proveedor Titular (laboratorio fabricante o importador) se obtiene estrictamente del **Maestro de Artículos de Abastecimiento** (`RAW_ARTICULOS` en `data/maestro_articulos_abastecimiento.csv`). Queda prohibido listar marcas comerciales (*D'Nattive*, *Nanita / NNF*, *VivaFrut*) como proveedores en la Pestaña 2; únicamente se listan los Proveedores Oficiales del Maestro (`NUTRIVAS`, `MOLINOS DEL MUNDO`, `PECADITOS INTEGRALES`, `AMAZON ANDES`, `WILD FOODS`, `QORINKA`, `ANDES CRISP`, `INKA COMEX`, `OLIVO DE ORO`, `DEPURATÉ`, `NOA LIFE`, `FIBRA FRUT`, `QORI`, `TAURI`, `OTROS PROVEEDORES`) y sus SKUs.
 - **FR-09 (Parámetros de Lead Time por Proveedor):**
   - *Rápidos (1–2 días):* Nutrivas, Amazon Andes, Tauri, Olivo de Oro, Depuraté, Inka Comex, Andes Crisp (máx 2 días). Si stock = 0, plazo de 4–5 días coordinando con Compras.
   - *Entrega Semanal:* Molinos del Mundo (Miércoles).
@@ -79,3 +83,21 @@ Construir el sistema integral de inteligencia comercial de Qali Kay S.A.C, que c
 - **NFR-01 (Eficiencia de Tokens):** Ningún script o prompt volcará tablas crudas al contexto de IA. Los cálculos numéricos son 100% deterministas en código local.
 - **NFR-02 (Gobernanza Spec-Kit):** El proyecto sigue rigurosamente el ciclo `constitution` ➔ `specify` ➔ `clarify` (mandatorio) ➔ `plan` ➔ `tasks` ➔ `analyze` (mandatorio) ➔ `implement` ➔ `impeccable`, delegando la ejecución de código al Agente Ejecutor (`agente_ejecutor`).
 - **NFR-03 (Calidad UX Impeccable y Responsive Mobile):** El Dashboard y la pantalla de bloqueo por PIN (`#lock-screen`) son 100% responsivos en teléfonos móviles (teclado numérico nativo `type="tel"` con auto-desbloqueo instantáneo, grillas adaptativas y touch targets $\ge 48\text{px}$).
+
+
+### MÓDULO 6: FASE 7 — AUDITORÍA ANTI-ALUCINACIÓN, PROMOCIONES Y SINCRONIZACIÓN TOTAL (OCTUBRE 2026)
+- **FR-18 (Auditoría Anti-Alucinación en Canasta de Recompra):** Prohibición total de inyectar SKUs ajenos (`FALLBACK_STAR_SKUS`) en la canasta habitual del cliente. Si un cliente ha comprado $M < 3$ productos históricos, solo se muestran sus $M$ productos reales sin inventar ítems (ej. Capistrano solo muestra Pasta Molinos y Pan Nutrisa, sin Citrato de Magnesio).
+- **FR-19 (Reglas de Promociones B2B vs B2C y Redacción Desacoplada):**
+  - Bonificaciones `12+1` y `6+1` aplican estrictamente a canales B2B (`tiendas/negocios`), jamás B2C.
+  - Se desacopla la canasta del cliente de la promoción sugerida: el texto debe indicar explícitamente qué producto específico tiene la bonificación, sin dar a entender que los productos habituales del cliente gozan de 6+1 o 12+1.
+  - Promoción estandarizada para clientes B2C (`zully-b2c`): *"20% de descuento en la 2da unidad de tu próxima compra"*.
+  - Modal desplegable en el HUD superior al hacer clic en *"Promociones Vigentes: 9 campañas"*, detallando catálogo de campañas B2B y promoción B2C.
+- **FR-20 (Separación de Clientes Inactivos > 120 Días y Priorización de Agendas WhatsApp):**
+  - Todo cliente con inactividad $> 120$ días (y sin deuda vencida) se segrega de las acciones diarias y de la bandeja de WhatsApp hacia el archivo de inactivos >120d.
+  - En el Dashboard UI se incluye un botón interactivo (`➕ Regresar a Acciones Diarias`) para que la Dirección pueda reincorporar con 1 clic a cualquier cliente a las acciones activas.
+  - Priorización de agenda WhatsApp en clientes activos: primero cobranzas vencidas, y en recompra por menor cantidad de días de retraso (`retrasoDias` asc) combinado con mayor ticket promedio (`ticketPromedio` desc).
+- **FR-21 (Auditoría CxC y Corrección de Documentos Anulados o a Cuenta):**
+  - Todo documento con `Estado == "VENCIDA"` o (`Estado == "A CUENTA"` con `Días vencidos > 0` y `Saldo > 0.50`) se computa como documento vencido y deuda vencida (ej. Antonio `MERMULTCENT` contabiliza 2 documentos vencidos).
+  - Alerta de auditoría para documentos activos en `Cuentas por cobrar 2026.xlsx` que figuren como anulados en Defontana (ej. `F001-6208`).
+  - Exclusión de facturas gratuitas (`01 Factura Electrónica Gratuita Sin IGV`) y recuperación determinista de decimales de ventas corrompidos por Google Sheets a formato fecha (72 filas).
+  - Ingesta de `RAW_VENTAS` en formato XLSX para preservar 100% de clientes con códigos alfanuméricos de mercados (`MERMULTCENT`, etc.).

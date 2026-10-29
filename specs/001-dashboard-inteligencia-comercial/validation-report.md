@@ -56,3 +56,19 @@
 - **Conflictos entre documentos:** 0.
 - **Dictamen:** **APROBADO (PASS)**.
 - **Autorización:** El **Agente Director** autoriza el traspaso y delega la ejecución técnica al **Agente Ejecutor** en la carpeta `/ejecucion/` para iniciar la **Fase 2 (Tareas T007 a T011)**.
+
+---
+
+## 4. Análisis de Coherencia Fase 7: Anti-Alucinación y Sincronización Total (2026-10-28)
+
+| Requerimiento Funcional | Descripción del Requerimiento | Tarea(s) Asociada(s) | Estado |
+| :--- | :--- | :--- | :---: |
+| **FR-18** | Cero alucinaciones en canasta (eliminar `FALLBACK_STAR_SKUS`) | T032 | 🟡 LISTA PARA IMPLEMENTAR |
+| **FR-19** | Promociones B2B desacopladas + Promo B2C (20% dscto 2da unid) + Modal HUD | T033, T034, T035 | 🟡 LISTA PARA IMPLEMENTAR |
+| **FR-20** | Archivo Inactivos >120d + Botón reactivación manual + Prioridad WhatsApp | T034, T035 | 🟡 LISTA PARA IMPLEMENTAR |
+| **FR-21** | Ingesta XLSX de RAW_VENTAS + Decimales Defontana + Exclusión gratuitas + Documentos a cuenta vencidos + Auditoría CxC vs Defontana + Pitru a Carlos Cuadros + Exclusión Colaboradores | T031, T032, T034 | 🟡 LISTA PARA IMPLEMENTAR |
+
+- **Ambigüedades detectadas:** 0.
+- **Conflictos de reglas de negocio:** 0.
+- **Dictamen:** **APROBADO (PASS)**.
+- **Autorización:** El Agente Director autoriza al Subagente Ejecutor (`agente_ejecutor`) para iniciar la ejecución disciplinada de las tareas **T031 a T035**.

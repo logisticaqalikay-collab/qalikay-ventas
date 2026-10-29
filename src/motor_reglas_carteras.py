@@ -57,7 +57,50 @@ URL_RAW_KARDEX = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz
 URL_PANEL_CONTROL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=PANEL_CONTROL"
 
 DEFAULT_KARDEX_PATH = Path("../qalikay-abastecimiento/descargas_erp/Kardex_Resumido_20261002.xlsx")
-DEFAULT_CXC_PATH = Path(r"C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx")
+
+def resolve_cxc_path(cxc_path: Optional[Path] = None) -> Path:
+    r"""
+    Resuelve dinamicamente la ruta de 'Cuentas por cobrar 2026.xlsx' soportando ambas PCs:
+    1. Prioridad: C:\Users\USER\OneDrive\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx
+    2. Fallback:  C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx
+    """
+    candidates = [
+        Path(r"C:\Users\USER\OneDrive\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx"),
+        Path(r"C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx"),
+    ]
+    if cxc_path and cxc_path.exists():
+        return cxc_path
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+DEFAULT_CXC_PATH = resolve_cxc_path()
+
+# Cuentas Oficiales de Consumo Interno y Colaboradores a Excluir (FR-06 y T032)
+CONSUMO_INTERNO_DNIS: Set[str] = {
+    "73615353",   # Cristian Gutierrez (CRISTIAN ANDRES)
+    "06024456",   # Walter Gutierrez (GUTIERREZ ARRESE WALTER)
+    "6024456",
+    "76423008",   # Carlos Cuadros (CUADROS VALERIANO CARLOS ALBERTO)
+    "09072925",   # Linda Rios (Linda Rios)
+    "9072925",
+    "72164623",   # Luis Gamarra (Luis Angel Gamarra Calle)
+    "72931481",   # Carlos Antonio Ureta (Carlos Antonio Ureta Abanto)
+    "06604924",   # Carlos Antonio Ureta (Historico)
+    "6604924",
+    # 4 Colaboradores excluidos de metricas comerciales y cartera Cristian (T032)
+    "42072907",   # Enrique Garcia
+    "042072907",
+    "49062951",   # Junnior Andres Jesus Castañeda Meza
+    "049062951",
+    "76738275",   # Kelly Solange Ruiz Bendezu
+    "076738275",
+    "003166920",  # Norexglis Esther Guaracaran Aranguren
+    "03166920",
+    "3166920",
+    "316692",
+}
 
 # Codigos Oficiales de Exclusiones Institucionales
 ORGANA_RUCS: Set[str] = {
@@ -163,29 +206,7 @@ LEAD_TIME_RULES: Dict[str, Dict[str, str]] = {
     }
 }
 
-# Catalogo de Respaldo de SKUs Estrella en Stock de Qali Kay (T023)
-FALLBACK_STAR_SKUS: List[Dict[str, str]] = [
-    {
-        "sku": "NAN-004",
-        "descripcion": "Citrato de Magnesio y Potasio x 200gr doypack NANITA",
-        "proveedor": "NUTRIVAS"
-    },
-    {
-        "sku": "DNC-005",
-        "descripcion": "Citrato Magnesio 100cap DNATTIVE",
-        "proveedor": "NUTRIVAS"
-    },
-    {
-        "sku": "DNE-001",
-        "descripcion": "Extracto de Vidaguaje (aguaje y cocona) 600ml DNATTIVE",
-        "proveedor": "NUTRIVAS"
-    },
-    {
-        "sku": "GON-002",
-        "descripcion": "Gomitas Melatonina Dulces Sueños GONMI",
-        "proveedor": "NUTRIVAS"
-    }
-]
+# T032: FALLBACK_STAR_SKUS eliminado. Cero alucinaciones: solo SKUs reales del cliente.
 
 
 # ==============================================================================
@@ -338,23 +359,25 @@ def load_cuentas_por_cobrar(cxc_path: Path) -> Tuple[Dict[str, Dict[str, Any]], 
             .str.replace(r"\.0$", "", regex=True)
             .apply(lambda x: "0" + x if len(x) == 7 and x.isdigit() else x)
         )
-        consumo_interno_cxc = {
-            "73615353", "06024456", "6024456", "76423008", "09072925",
-            "9072925", "72164623", "72931481", "06604924", "6604924"
-        }
-        df_cxc = df_cxc[~df_cxc["Cod_Cliente"].isin(consumo_interno_cxc)]
+        df_cxc = df_cxc[~df_cxc["Cod_Cliente"].isin(CONSUMO_INTERNO_DNIS)]
 
         deudas_por_cliente: Dict[str, Dict[str, Any]] = {}
         for cod_cli, grp in df_cxc.groupby("Cod_Cliente"):
-            vencidas = grp[grp["Estado"] == "VENCIDA"]
-            a_cuenta = grp[grp["Estado"] == "A CUENTA"]
-            pendientes = grp[grp["Estado"] == "PENDIENTE"]
+            # Regla T032: Todo documento con Estado == "VENCIDA" o (Estado == "A CUENTA" y Días vencidos > 0 y Saldo > 0.50)
+            dias_num = pd.to_numeric(grp["Días vencidos"], errors="coerce").fillna(0).astype(int)
+            saldo_num = pd.to_numeric(grp["Saldo"], errors="coerce").fillna(0.0)
+            estado_grp = grp["Estado"].astype(str).str.strip().str.upper()
+
+            is_venc = (estado_grp == "VENCIDA") | ((estado_grp == "A CUENTA") & (dias_num > 0) & (saldo_num > 0.50))
+            vencidas = grp[is_venc]
+            a_cuenta = grp[(estado_grp == "A CUENTA") & (~is_venc)]
+            pendientes = grp[estado_grp == "PENDIENTE"]
 
             saldo_venc = float(vencidas["Saldo"].sum()) if not vencidas.empty else 0.0
             saldo_ac = float(a_cuenta["Saldo"].sum()) if not a_cuenta.empty else 0.0
             saldo_pend = float(pendientes["Saldo"].sum()) if not pendientes.empty else 0.0
             docs_venc = len(vencidas)
-            dias_mora = int(vencidas["Días vencidos"].max()) if not vencidas.empty and pd.notna(vencidas["Días vencidos"].max()) else 0
+            dias_mora = int(dias_num[is_venc].max()) if is_venc.any() else 0
 
             deudas_por_cliente[cod_cli] = {
                 "deuda_vencida": round(saldo_venc, 2),
@@ -380,9 +403,16 @@ def load_cuentas_por_cobrar(cxc_path: Path) -> Tuple[Dict[str, Dict[str, Any]], 
         contactos_por_cliente: Dict[str, Dict[str, str]] = {}
         for _, r in df_cli.iterrows():
             ruc = str(r["RUC_clean"])
+            nom_com = str(r["NOMBRE COMERCIAL"]).strip() if pd.notna(r["NOMBRE COMERCIAL"]) and str(r["NOMBRE COMERCIAL"]).strip() != "nan" else ""
+            contacto = str(r["CONTACTO"]).strip() if pd.notna(r["CONTACTO"]) and str(r["CONTACTO"]).strip() != "nan" else ""
+
+            # T032: No sobreescribir razon social de personas naturales / colaboradores con nombres ajenos (ej. Kelly Ruiz no debe decir CESAR JOEL)
+            if ruc in CONSUMO_INTERNO_DNIS:
+                nom_com = ""
+
             contactos_por_cliente[ruc] = {
-                "nombre_comercial": str(r["NOMBRE COMERCIAL"]).strip() if pd.notna(r["NOMBRE COMERCIAL"]) and str(r["NOMBRE COMERCIAL"]).strip() != "nan" else "",
-                "contacto": str(r["CONTACTO"]).strip() if pd.notna(r["CONTACTO"]) and str(r["CONTACTO"]).strip() != "nan" else "",
+                "nombre_comercial": nom_com,
+                "contacto": contacto,
                 "distrito": str(r["DISTRITO"]).strip() if pd.notna(r["DISTRITO"]) and str(r["DISTRITO"]).strip() != "nan" else "",
                 "direccion": str(r["DIRECCIÓN DE ENTREGA"]).strip() if pd.notna(r["DIRECCIÓN DE ENTREGA"]) and str(r["DIRECCIÓN DE ENTREGA"]).strip() != "nan" else "",
                 "celular": str(r["CEL."]).strip().replace(".0", "") if pd.notna(r["CEL."]) and str(r["CEL."]).strip() != "nan" else ""
@@ -432,6 +462,10 @@ def classify_transactional_cartera(row: pd.Series, doc_totals: Dict[str, float])
     vendedor = str(row["Nombre_Vendedor"])
     nro_doc = str(row["Nro_Doc"])
 
+    # Override Soberano PITRU / SAYARIQ (T032) -> Carlos Cuadros
+    if cod_cli == "20501997545" or "PITRU" in str(row["Nombre_Cliente"]).upper() or "SAYARIQ" in str(row["Nombre_Cliente"]).upper():
+        return "carlos-cuadros"
+
     # Override 1: Whitnin Tesen (Piura) pertenece 100% a Cristian
     if cod_cli in WHITNIN_CODES or "WHITNIN" in str(row["Nombre_Cliente"]).upper():
         return "cristian-gutierrez"
@@ -478,6 +512,10 @@ def determine_client_cartera_owner(
     - Overrides: Whitnin Tesen -> Cristian; Joel Garcia -> Carlos Cuadros.
     - Canal Inbound: Regla soberana D1 (si tiene RUC 20 o alguna compra > S/ 400.00 -> zully-b2b, caso contrario zully-b2c).
     """
+    # Override Soberano PITRU / SAYARIQ (T032) -> Carlos Cuadros
+    if client_cod == "20501997545" or "PITRU" in client_name.upper() or "SAYARIQ" in client_name.upper():
+        return "carlos-cuadros"
+
     # Override Whitnin Tesen
     if client_cod in WHITNIN_CODES or "WHITNIN" in client_name.upper():
         return "cristian-gutierrez"
@@ -530,6 +568,40 @@ def determine_client_cartera_owner(
 # ==============================================================================
 # T013 Y T014: MOTORES DE CICLO B2C Y FRECUENCIA B2B
 # ==============================================================================
+
+def map_cxc_row_to_seller_id(row: pd.Series) -> str:
+    """Asigna cada documento de Cuentas por Cobrar a una cartera comercial (T032)."""
+    cod = str(row.get("Cod_Cliente", "")).strip().replace(".0", "")
+    nom = str(row.get("Nombre del Cliente", "")).strip().upper()
+    com = str(row.get("NOMBRE COMERCIAL", "")).strip().upper()
+    vend = str(row.get("Nombre del Vendedor", "")).strip().upper()
+
+    # Override Soberano PITRU / SAYARIQ (T032) -> Carlos Cuadros
+    if cod == "20501997545" or "PITRU" in nom or "SAYARIQ" in nom or "PITRU" in com or "SAYARIQ" in com:
+        return "carlos-cuadros"
+
+    if cod in WHITNIN_CODES or "WHITNIN" in nom or "WHITNIN" in com:
+        return "cristian-gutierrez"
+    if cod in ORGANA_RUCS or "ORGANA" in nom or "ORGANA" in com:
+        return "cristian-gutierrez"
+    if cod == UNALM_RUC or "FUNDEAGRO" in nom or "AGRARIA" in com:
+        return "walter-gutierrez"
+
+    if "CRISTIAN" in vend:
+        return "cristian-gutierrez"
+    if "WALTER" in vend:
+        return "walter-gutierrez"
+    if "ENRIQUE" in vend:
+        return "enrique-garcia"
+    if "CUADROS" in vend or "CARLOS" in vend or "JOEL" in vend:
+        return "carlos-cuadros"
+    if "REP. COMERCIAL" in vend or "ZULLY" in vend or "LINDA" in vend:
+        total_doc = float(row.get("Total", 0.0) or 0.0)
+        if total_doc > 400.0:
+            return "zully-b2b"
+        return "zully-b2c"
+    return "enrique-garcia"
+
 
 def calculate_client_frequency_metrics(
     client_df: pd.DataFrame,
@@ -792,54 +864,7 @@ def generate_smart_repurchase_recommendation(
             "promo_aplicable": promo_match
         })
 
-    # T023: Completar hasta exactamente 3 productos usando catalogo de respaldo de SKUs estrella en stock
-    skus_existentes = {it["sku"] for it in items_canasta}
-    for fallback in FALLBACK_STAR_SKUS:
-        if len(items_canasta) >= 3:
-            break
-        f_sku = fallback["sku"].strip().upper().replace(" ", "")
-        if f_sku in skus_existentes:
-            continue
-
-        f_desc = fallback["descripcion"]
-        f_prov = fallback["proveedor"]
-
-        # Consultar Kardex
-        k_data = kardex_inventory.get(f_sku, {"stock": 0.0, "costo": 0.0})
-        stock_disp = k_data["stock"]
-
-        # Consultar Lead Time
-        lt_info = LEAD_TIME_RULES.get(f_prov, {
-            "categoria": "OTROS",
-            "dias_con_stock": "24 a 48 horas",
-            "dias_sin_stock": "3 a 5 días hábiles",
-            "plazo_texto": "Plazo estándar 3-5 días."
-        })
-
-        if stock_disp > 0:
-            estado_logistico = f"✅ Stock disponible ({int(stock_disp)} unids) - Despacho 24-48h"
-        else:
-            hay_quiebre_stock = True
-            estado_logistico = f"⚠️ Stock 0 en almacén - {lt_info['dias_sin_stock']}"
-
-        # Buscar promociones vigentes aplicables
-        promo_match = None
-        for pr in promociones:
-            if pr.get("sku") == f_sku or pr.get("proveedor") == f_prov:
-                promo_match = pr.get("descripcion")
-                if promo_match not in promos_sugeridas:
-                    promos_sugeridas.append(promo_match)
-                break
-
-        items_canasta.append({
-            "sku": f_sku,
-            "descripcion": f_desc,
-            "proveedor": f_prov,
-            "stock_almacen": stock_disp,
-            "estado_logistico": estado_logistico,
-            "promo_aplicable": promo_match
-        })
-        skus_existentes.add(f_sku)
+    # T032: Eliminado FALLBACK_STAR_SKUS. Cero alucinaciones: si compro <3 SKUs historicos, solo mostrar sus SKUs reales.
 
     # Datos de contacto
     nombre_contacto = contact_info.get("contacto") or client_name.split()[0]
@@ -857,16 +882,22 @@ def generate_smart_repurchase_recommendation(
     }
     firma_vendedor = vendedor_nombres.get(vendedor_cartera, "Equipo Comercial Qali Kay")
 
-    # 4. Construir Texto WhatsApp Limpio con exactamente 3 viñetas (T023)
-    lineas_skus = "\n".join([f"• *{it['descripcion']}*" for it in items_canasta[:3]])
+    # 4. Construir Texto WhatsApp Limpio y Desacoplado (T032 y T034)
+    if items_canasta:
+        lineas_skus = "\n".join([f"• *{it['descripcion']}*" for it in items_canasta])
+    else:
+        lineas_skus = "• *Catálogo habitual de reposición*"
 
     nota_stock = "📦 *Disponibilidad:* Contamos con stock en almacén para entrega inmediata en 24 a 48 horas."
     if hay_quiebre_stock:
         nota_stock = "📦 *Disponibilidad:* Algunas líneas requieren pedido programado a laboratorio (coordinando despacho en 3 a 5 días)."
 
     nota_promo = ""
-    if promos_sugeridas:
-        nota_promo = f"\n🎁 *Promoción activa del mes:* {promos_sugeridas[0]}"
+    if vendedor_cartera == "zully-b2c":
+        nota_promo = "\n🎁 *Beneficio Exclusivo B2C:* 20% de descuento en la 2da unidad de tu próxima compra."
+    elif promos_sugeridas:
+        p_desc = promos_sugeridas[0]
+        nota_promo = f"\n🎯 *Promo B2B Vigente:* {p_desc}"
 
     whatsapp_template = (
         f"¡Hola {nombre_contacto}! Te saluda {firma_vendedor} de Qali Kay S.A.C. 🌿\n\n"
@@ -923,6 +954,19 @@ def run_motor_reglas_pipeline(
 
     df = pd.read_parquet(parquet_path)
     print(f"[DATA] Parquet cargado: {len(df):,} transacciones comerciales.")
+
+    # Excluir Consumo Interno y los 4 colaboradores de todas las metricas y carteras (T032)
+    df["Cod_Cliente_norm"] = (
+        df["Cod_Cliente"]
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\.0$", "", regex=True)
+        .apply(lambda x: "0" + x if len(x) == 7 and x.isdigit() else x)
+    )
+    filas_antes = len(df)
+    df = df[~df["Cod_Cliente_norm"].isin(CONSUMO_INTERNO_DNIS)].copy()
+    if len(df) < filas_antes:
+        print(f"[T032] {filas_antes - len(df)} transacciones de colaboradores excluidas de metricas comerciales.")
 
     # Fecha de anclaje determinista (D4: max fecha del dataset o override)
     max_fecha_dataset = pd.to_datetime(df["Fecha"].max()).date()

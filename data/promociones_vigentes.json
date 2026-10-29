@@ -12,7 +12,9 @@
       "mecanica": "12+1",
       "descripcion": "Por la compra de 12 unidades lleva 1 unidad bonificada sin costo.",
       "vigencia": "Campaña activa 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
@@ -25,7 +27,9 @@
       "mecanica": "6+1",
       "descripcion": "Lleva 6 unidades y obtén 1 unidad gratis de la misma línea.",
       "vigencia": "Campaña activa 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
@@ -38,7 +42,9 @@
       "mecanica": "6+1",
       "descripcion": "Lleva 6 unidades y recibe 1 unidad bonificada para rotación en anaquel.",
       "vigencia": "Campaña activa 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": false
     },
     {
@@ -51,7 +57,9 @@
       "mecanica": "6+1",
       "descripcion": "Bonificación 6+1 activa en canales de farmacias y belleza.",
       "vigencia": "Campaña activa 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
@@ -64,7 +72,9 @@
       "mecanica": "PRECIO_ESPECIAL",
       "descripcion": "Pack degustación y entrada a puntos nuevos con 15% de descuento por display.",
       "vigencia": "Permanente para clientes nuevos",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
@@ -77,7 +87,9 @@
       "mecanica": "DESCUENTO_CAJA",
       "descripcion": "Descuento escalonado del 8% en compras por caja cerrada (entrega los miércoles).",
       "vigencia": "Entregas programadas miércoles",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
@@ -90,7 +102,9 @@
       "mecanica": "ESCALA_DISPLAY",
       "descripcion": "Tarifa mayorista reducida a partir de display cerrado de 12 unidades.",
       "vigencia": "Permanente 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": false
     },
     {
@@ -103,20 +117,24 @@
       "mecanica": "10+1_MIXTO",
       "descripcion": "10+1 combinable en cápsulas orgánicas Amazon Andes.",
       "vigencia": "Campaña activa 2026",
-      "canal_aplicable": ["B2B"],
+      "canal_aplicable": [
+        "B2B"
+      ],
       "destacado": true
     },
     {
       "id": "PROMO-B2C-001",
-      "proveedor": "NUTRIVAS",
-      "marca": "GONMI",
-      "sku": "GON-001",
-      "descripcion_sku": "Gomitas Buenas Noches (Melatonina) 130u",
-      "tipo_promo": "B2C_RECOMPRA",
-      "mecanica": "ENVIO_GRATIS_2DO_FRASCO",
-      "descripcion": "Envío gratis a partir del segundo frasco en recompra habitual.",
+      "proveedor": "GENERAL",
+      "marca": "LINEA COMPLETA",
+      "sku": "TODOS",
+      "descripcion_sku": "2da unidad en recompra habitual",
+      "tipo_promo": "DESCUENTO_2DA_UNIDAD",
+      "mecanica": "20%_DSCTO_2DA_UNIDAD",
+      "descripcion": "20% de descuento en la 2da unidad de tu próxima compra",
       "vigencia": "Campaña permanente B2C",
-      "canal_aplicable": ["B2C"],
+      "canal_aplicable": [
+        "B2C"
+      ],
       "destacado": true
     }
   ]

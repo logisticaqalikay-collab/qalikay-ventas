@@ -13,6 +13,11 @@ if not exist "logs" mkdir "logs"
 set "LOG_FILE=%PROJECT_DIR%logs\actualizacion_dashboard.log"
 
 set "PYTHON_EXE=%PROJECT_DIR%.venv\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" (
+    if exist "%PROJECT_DIR%..\qalikay-abastecimiento\.venv\Scripts\python.exe" (
+        set "PYTHON_EXE=%PROJECT_DIR%..\qalikay-abastecimiento\.venv\Scripts\python.exe"
+    )
+)
 
 if not exist "%PYTHON_EXE%" (
     echo [ERROR] No se encontro el interprete Python en %PYTHON_EXE%

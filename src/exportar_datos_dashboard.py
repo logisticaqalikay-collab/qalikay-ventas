@@ -33,7 +33,25 @@ DEFAULT_ALERTAS_PATH = Path("data/alertas_comerciales_consolidadas.json")
 DEFAULT_RESUMEN_PATH = Path("data/resumen_carteras.json")
 DEFAULT_SYNC_PATH = Path("data/sync_status_cache.json")
 DEFAULT_MAESTRO_CSV = Path("data/maestro_articulos_abastecimiento.csv")
-DEFAULT_CXC_PATH = Path(r"C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx")
+
+def resolve_cxc_path(cxc_path: Optional[Path] = None) -> Path:
+    r"""
+    Resuelve dinamicamente la ruta de 'Cuentas por cobrar 2026.xlsx' soportando ambas PCs:
+    1. Prioridad: C:\Users\USER\OneDrive\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx
+    2. Fallback:  C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx
+    """
+    candidates = [
+        Path(r"C:\Users\USER\OneDrive\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx"),
+        Path(r"C:\Users\cguti\OneDrive\Inka Comex\CUENTAS POR COBRAR\QALI KAY\2026\Cuentas por cobrar 2026.xlsx"),
+    ]
+    if cxc_path and cxc_path.exists():
+        return cxc_path
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+DEFAULT_CXC_PATH = resolve_cxc_path()
 DEFAULT_OUTPUT_JSON = Path("data/datos_comerciales.json")
 DEFAULT_HTML_PATH = Path("ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html")
 
@@ -46,9 +64,29 @@ from src.motor_reglas_carteras import (
     WHITNIN_CODES
 )
 
+# Cuentas Oficiales de Consumo Interno y Colaboradores a Excluir (FR-06 y T032)
 CONSUMO_INTERNO_CXC: Set[str] = {
-    "73615353", "06024456", "6024456", "76423008", "09072925",
-    "9072925", "72164623", "72931481", "06604924", "6604924"
+    "73615353",   # Cristian Gutierrez (CRISTIAN ANDRES)
+    "06024456",   # Walter Gutierrez (GUTIERREZ ARRESE WALTER)
+    "6024456",
+    "76423008",   # Carlos Cuadros (CUADROS VALERIANO CARLOS ALBERTO)
+    "09072925",   # Linda Rios (Linda Rios)
+    "9072925",
+    "72164623",   # Luis Gamarra (Luis Angel Gamarra Calle)
+    "72931481",   # Carlos Antonio Ureta (Carlos Antonio Ureta Abanto)
+    "06604924",   # Carlos Antonio Ureta (Historico)
+    "6604924",
+    # 4 Colaboradores excluidos de metricas comerciales y cartera Cristian (T032)
+    "42072907",   # Enrique Garcia
+    "042072907",
+    "49062951",   # Junnior Andres Jesus Castañeda Meza
+    "049062951",
+    "76738275",   # Kelly Solange Ruiz Bendezu
+    "076738275",
+    "003166920",  # Norexglis Esther Guaracaran Aranguren
+    "03166920",
+    "3166920",
+    "316692",
 }
 
 SELLER_CONFIG = [
@@ -318,10 +356,14 @@ def is_excluded_for_alerts(cod_cli: str, nom_cli: str) -> bool:
 
 def map_cxc_row_to_seller_id(row: pd.Series) -> str:
     """Asigna cada documento de Cuentas por Cobrar a uno de los 6 vendedores."""
-    cod = str(row.get("Cod_Cliente", "")).strip()
+    cod = str(row.get("Cod_Cliente", "")).strip().replace(".0", "")
     nom = str(row.get("Nombre del Cliente", "")).strip().upper()
     com = str(row.get("NOMBRE COMERCIAL", "")).strip().upper()
     vend = str(row.get("Nombre del Vendedor", "")).strip().upper()
+
+    # Override Soberano PITRU / SAYARIQ (T032) -> Carlos Cuadros
+    if cod == "20501997545" or "PITRU" in nom or "SAYARIQ" in nom or "PITRU" in com or "SAYARIQ" in com:
+        return "carlos"
 
     if cod in WHITNIN_CODES or "WHITNIN" in nom or "WHITNIN" in com:
         return "cristian"
@@ -384,7 +426,9 @@ def load_cxc_details_by_seller(cxc_path: Path) -> Tuple[Dict[str, float], Dict[s
             total_doc = round(float(r["Total_num"]), 2)
             dias_mora = max(0, int(r["Dias_num"]))
 
-            if estado == "VENCIDA":
+            # Regla T032: Todo documento con Estado == "VENCIDA" o (Estado == "A CUENTA" y Días vencidos > 0 y Saldo > 0.50)
+            es_vencido = (estado == "VENCIDA") or ((estado == "A CUENTA") and (dias_mora > 0) and (saldo > 0.50))
+            if es_vencido:
                 deuda_vencida[s_id] = round(deuda_vencida[s_id] + saldo, 2)
 
             f_emi = pd.to_datetime(r["Fecha"], errors="coerce")
@@ -448,12 +492,16 @@ def build_global_cxc_vencidos(cxc_path: Path) -> Dict[str, Any]:
         )
         df_cxc = df_cxc[~df_cxc["Cod_Cliente"].isin(CONSUMO_INTERNO_CXC)]
 
-        # Solo documentos con Estado VENCIDA y saldo > 0.50
-        df_venc = df_cxc[df_cxc["Estado"] == "VENCIDA"].copy()
-        df_venc["Saldo_num"] = pd.to_numeric(df_venc["Saldo"], errors="coerce").fillna(0.0)
-        df_venc["Total_num"] = pd.to_numeric(df_venc["Total"], errors="coerce").fillna(0.0)
-        df_venc["Dias_num"] = pd.to_numeric(df_venc["Días vencidos"], errors="coerce").fillna(0).astype(int)
-        df_venc = df_venc[df_venc["Saldo_num"] > 0.50].copy()
+        # Documentos exigibles vencidos (T032): Estado == "VENCIDA" o (Estado == "A CUENTA" y Días vencidos > 0 y Saldo > 0.50)
+        df_cxc["Saldo_num"] = pd.to_numeric(df_cxc["Saldo"], errors="coerce").fillna(0.0)
+        df_cxc["Total_num"] = pd.to_numeric(df_cxc["Total"], errors="coerce").fillna(0.0)
+        df_cxc["Dias_num"] = pd.to_numeric(df_cxc["Días vencidos"], errors="coerce").fillna(0).astype(int)
+        df_cxc["Estado_clean"] = df_cxc["Estado"].astype(str).str.strip().str.upper()
+
+        is_vencido = (df_cxc["Estado_clean"] == "VENCIDA") | (
+            (df_cxc["Estado_clean"] == "A CUENTA") & (df_cxc["Dias_num"] > 0) & (df_cxc["Saldo_num"] > 0.50)
+        )
+        df_venc = df_cxc[is_vencido & (df_cxc["Saldo_num"] > 0.50)].copy()
 
         # Mapear vendedor de cada comprobante
         df_venc["seller_id"] = [map_cxc_row_to_seller_id(r) for _, r in df_venc.iterrows()]
@@ -635,6 +683,10 @@ def generate_clients_array(alertas_data: List[Dict[str, Any]]) -> List[Dict[str,
         docs_venc = int(cobranza.get("docs_vencidos", 0))
         dias_mora = int(cobranza.get("dias_mora_max", 0))
         tiene_bloqueo = bool(cobranza.get("bloqueo_por_mora", False))
+
+        # T034: Separar clientes inactivos > 120 dias sin deuda vencida hacia INACTIVOS_ARCHIVO_120D
+        if dias_inactivo > 120 and not tiene_bloqueo and deuda_vencida <= 0.50:
+            continue
 
         # T024: Filtro ultimos 90 dias para Linda B2C en el Feed visible (Pestaña 4):
         # Solo incluir clientes de Linda B2C con ultima compra en ultimos 90 dias (dias_inactivo <= 90)
@@ -841,6 +893,147 @@ def compute_portfolio_inactivity_at_cutoff(
                 result[c_owner]["una2m"] += 1
 
     return result
+
+
+def detect_cxc_defontana_discrepancies(cxc_path: Path, df_defontana: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Detecta discrepancias entre Cuentas por Cobrar y Defontana (T034):
+    Documentos activos en CxC con saldo > 0.50 que figuren inexistentes o anulados en Defontana
+    (ej. F001-6208 de Enrique García).
+    """
+    default_payload = {
+        "totalDiscrepancias": 0,
+        "totalMontoDiscrepante": 0.0,
+        "items": []
+    }
+    if not cxc_path.exists():
+        return default_payload
+
+    try:
+        df_cxc = pd.read_excel(cxc_path, sheet_name="CXC", skiprows=10)
+        df_cxc = df_cxc.dropna(subset=["Número del Documento"])
+        df_cxc["Cod_Cliente"] = (
+            df_cxc["Código del Cliente"]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\.0$", "", regex=True)
+            .apply(lambda x: "0" + x if len(x) == 7 and x.isdigit() else x)
+        )
+        df_cxc = df_cxc[~df_cxc["Cod_Cliente"].isin(CONSUMO_INTERNO_CXC)]
+
+        df_cxc["Saldo_num"] = pd.to_numeric(df_cxc["Saldo"], errors="coerce").fillna(0.0)
+        df_cxc["Total_num"] = pd.to_numeric(df_cxc["Total"], errors="coerce").fillna(0.0)
+        df_cxc["Dias_num"] = pd.to_numeric(df_cxc["Días vencidos"], errors="coerce").fillna(0).astype(int)
+        df_open = df_cxc[df_cxc["Saldo_num"] > 0.50].copy()
+
+        df_def_docs = set(df_defontana["Nro_Doc"].astype(str).str.strip())
+        defontana_net = df_defontana.groupby("Nro_Doc")["Total_Detalle"].sum().to_dict()
+
+        discrepancias_list = []
+        for _, r in df_open.iterrows():
+            nro_doc = str(r["Número del Documento"]).strip()
+            saldo = round(float(r["Saldo_num"]), 2)
+            total = round(float(r["Total_num"]), 2)
+            dias_mora = int(r["Dias_num"])
+            estado_cxc = str(r["Estado"]).strip().upper()
+            nom_cli = str(r["Nombre del Cliente"]).strip() if pd.notna(r["Nombre del Cliente"]) else ""
+            nom_com = str(r.get("NOMBRE COMERCIAL", "")).strip() if pd.notna(r.get("NOMBRE COMERCIAL", "")) and str(r.get("NOMBRE COMERCIAL", "")).strip() != "nan" else nom_cli
+            s_id = map_cxc_row_to_seller_id(r)
+            vendedor_cxc = str(r.get("Nombre del Vendedor", "")).strip()
+            fecha_doc = str(r.get("Fecha", ""))[:10]
+
+            if nro_doc not in df_def_docs:
+                discrepancias_list.append({
+                    "nroDoc": nro_doc,
+                    "cliente": nom_cli,
+                    "comercial": nom_com or nom_cli,
+                    "ruc": str(r["Cod_Cliente"]),
+                    "vendedor": vendedor_cxc,
+                    "sellerId": s_id,
+                    "estadoCxC": estado_cxc,
+                    "saldoCxC": saldo,
+                    "totalDoc": total,
+                    "diasMora": dias_mora,
+                    "fecha": fecha_doc,
+                    "tipo": "Inexistente en Defontana",
+                    "diagnostico": "El comprobante figura activo en CxC pero no existe en el registro oficial de Defontana."
+                })
+            elif defontana_net.get(nro_doc, 0.0) <= 0.01:
+                discrepancias_list.append({
+                    "nroDoc": nro_doc,
+                    "cliente": nom_cli,
+                    "comercial": nom_com or nom_cli,
+                    "ruc": str(r["Cod_Cliente"]),
+                    "vendedor": vendedor_cxc,
+                    "sellerId": s_id,
+                    "estadoCxC": estado_cxc,
+                    "saldoCxC": saldo,
+                    "totalDoc": total,
+                    "diasMora": dias_mora,
+                    "fecha": fecha_doc,
+                    "tipo": "Anulado / Saldo Neto <= 0 en Defontana",
+                    "diagnostico": f"El comprobante fue anulado o compensado por Nota de Crédito en Defontana (Venta neta: S/ {defontana_net.get(nro_doc, 0.0):,.2f}), pero mantiene saldo en CxC."
+                })
+
+        discrepancias_list.sort(key=lambda x: x["saldoCxC"], reverse=True)
+        monto_total_disc = round(sum(d["saldoCxC"] for d in discrepancias_list), 2)
+        print(f"[T034] Discrepancias CxC vs Defontana detectadas: {len(discrepancias_list)} comprobantes por S/ {monto_total_disc:,.2f}.")
+
+        return {
+            "totalDiscrepancias": len(discrepancias_list),
+            "totalMontoDiscrepante": monto_total_disc,
+            "items": discrepancias_list
+        }
+    except Exception as e:
+        print(f"[WARN T034] Error al evaluar discrepancias CxC vs Defontana: {e}")
+        return default_payload
+
+
+def build_inactivos_archivo_120d(alertas_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Construye el arreglo INACTIVOS_ARCHIVO_120D (T034):
+    Clientes con inactividad > 120 dias sin deuda vencida exigible, segregados de las acciones
+    diarias para consulta histórica y reincorporación manual desde el dashboard.
+    """
+    seller_name_map = {
+        "cristian-gutierrez": "Cristian",
+        "walter-gutierrez": "Walter",
+        "enrique-garcia": "Enrique",
+        "carlos-cuadros": "Carlos C",
+        "zully-b2b": "Linda B2B",
+        "zully-b2c": "Linda B2C"
+    }
+    inactivos_out = []
+    for c in alertas_data:
+        cod_cli = str(c.get("cod_cliente", "")).strip().replace(".0", "")
+        nom_cli = str(c.get("nombre_cliente", "")).strip()
+        if is_excluded_for_alerts(cod_cli, nom_cli) or cod_cli in CONSUMO_INTERNO_CXC:
+            continue
+        dias_inact = int(c.get("dias_inactivo", 0))
+        cob = c.get("cobranza", {})
+        tiene_deuda = bool(cob.get("bloqueo_por_mora", False)) or float(cob.get("deuda_vencida_soles", 0.0)) > 0.50
+        if dias_inact > 120 and not tiene_deuda:
+            c_id = c.get("cartera_asignada", "enrique-garcia")
+            s_short = seller_name_map.get(c_id, "Enrique")
+            recompra = c.get("recompra_inteligente", {})
+            canasta = [it.get("descripcion", "") for it in recompra.get("canasta_habitual", [])]
+            top_prods = "; ".join(canasta[:3]) if canasta else "Catálogo general"
+            inactivos_out.append({
+                "id": cod_cli,
+                "nombre": str(c.get("nombre_comercial", "")) or nom_cli,
+                "razonSocial": nom_cli,
+                "vendedor": s_short,
+                "carteraId": c_id,
+                "diasInactivo": dias_inact,
+                "ultimaCompra": str(c.get("ultima_fecha_compra", "")),
+                "ticketPromedio": round(float(c.get("ticket_promedio", 0.0)), 2),
+                "cantCompras": int(c.get("cant_compras_historicas", 1)),
+                "canasta": top_prods,
+                "celular": str(c.get("celular", "")),
+                "contacto": str(c.get("contacto", ""))
+            })
+    inactivos_out.sort(key=lambda x: -x["diasInactivo"])
+    return inactivos_out
 
 
 def build_dashboard_payload(
@@ -1387,26 +1580,46 @@ def build_dashboard_payload(
         c_id = s["cartera_id"]
         seller_short = s["short"]
 
-        # Filtrar clientes de esta cartera excluyendo Organa y UNALM
-        s_clients = [
-            c for c in clientes_alertas
-            if c.get("cartera_asignada") == c_id
-            and not is_excluded_for_alerts(str(c.get("cod_cliente", "")), str(c.get("nombre_cliente", "")))
-        ]
+        # Filtrar clientes de esta cartera excluyendo Organa, UNALM e inactivos > 120d sin deuda (T034)
+        s_clients = []
+        for c in clientes_alertas:
+            cod_c = str(c.get("cod_cliente", "")).strip().replace(".0", "")
+            nom_c = str(c.get("nombre_cliente", ""))
+            if c.get("cartera_asignada") != c_id:
+                continue
+            if is_excluded_for_alerts(cod_c, nom_c) or cod_c in CONSUMO_INTERNO_CXC:
+                continue
+            dias_inact = int(c.get("dias_inactivo", 0))
+            tiene_deuda = bool(c.get("cobranza", {}).get("bloqueo_por_mora", False))
+            if dias_inact > 120 and not tiene_deuda:
+                continue  # Segregados a INACTIVOS_ARCHIVO_120D
+            s_clients.append(c)
+
+        def get_retraso_dias_key(item: Dict[str, Any]) -> int:
+            d = int(item.get("dias_inactivo", 0))
+            n = int(round(item.get("mediana_ciclo_n", 30)))
+            return max(0, d - n)
 
         cobranzas = [c for c in s_clients if c.get("cobranza", {}).get("bloqueo_por_mora", False)]
         cobranzas.sort(key=lambda x: float(x.get("cobranza", {}).get("deuda_vencida_soles", 0.0)), reverse=True)
 
+        # T034: Ordenar por menor cantidad de dias de retraso (asc) y mayor ticket promedio (desc)
         urgentes = [c for c in s_clients if c.get("severidad") == "CRITICA" and not c.get("cobranza", {}).get("bloqueo_por_mora", False)]
-        urgentes.sort(key=lambda x: float(x.get("ticket_promedio", 0.0)), reverse=True)
+        urgentes.sort(key=lambda x: (get_retraso_dias_key(x), -float(x.get("ticket_promedio", 0.0))))
 
         preventivos = [c for c in s_clients if c.get("severidad") == "ADVERTENCIA" and not c.get("cobranza", {}).get("bloqueo_por_mora", False)]
-        preventivos.sort(key=lambda x: float(x.get("ticket_promedio", 0.0)), reverse=True)
+        preventivos.sort(key=lambda x: (get_retraso_dias_key(x), -float(x.get("ticket_promedio", 0.0))))
 
         oportunidades = [c for c in s_clients if c.get("severidad") == "OPORTUNIDAD" and not c.get("cobranza", {}).get("bloqueo_por_mora", False)]
-        oportunidades.sort(key=lambda x: float(x.get("ticket_promedio", 0.0)), reverse=True)
+        oportunidades.sort(key=lambda x: (get_retraso_dias_key(x), -float(x.get("ticket_promedio", 0.0))))
 
         lines = [f"📌 *ACCIONES DEL DÍA — {seller_short.upper()}*"]
+
+        # Promo texto desacoplado
+        if s_id == "zully-b2c":
+            promo_decoupled_str = "🎁 Promo B2C: 20% de descuento en la 2da unidad de tu próxima compra."
+        else:
+            promo_decoupled_str = "🎯 Promo B2B: Bonificación 12+1 en *NAD+ Resveratrol 60 cap Nanita* (o 6+1 en *Aceite de Calabaza*)."
 
         if cobranzas:
             lines.append("\n💸 *COBRAR Y CONDICIONAR PEDIDO:*")
@@ -1428,10 +1641,9 @@ def build_dashboard_payload(
                 n = round(c.get("mediana_ciclo_n", 30))
                 canasta_c = c.get("recompra_inteligente", {}).get("canasta_habitual", [])
                 top_prods = ", ".join([p["descripcion"] for p in canasta_c[:3]]) if canasta_c else "catálogo habitual"
-                promos_c = c.get("recompra_inteligente", {}).get("promociones_aplicables", [])
-                promo_str = f" + *{promos_c[0]}*" if promos_c else ""
-                lines.append(f"• *{nom}* — Lleva {dias} días sin pedir (ciclo cada {n}d).")
-                lines.append(f"  👉 Ofrecer reposición de: *{top_prods}*{promo_str}.")
+                lines.append(f"• *{nom}* — Lleva {dias} días sin pedir (ciclo habitual cada {n}d).")
+                lines.append(f"  👉 Reposición habitual: *{top_prods}*.")
+                lines.append(f"  {promo_decoupled_str}")
 
         if preventivos:
             lines.append("\n🟡 *SEGUIMIENTO ACTIVO (RECOMPRA SEMANAL):*")
@@ -1440,7 +1652,8 @@ def build_dashboard_payload(
                 dias = c.get("dias_inactivo", 0)
                 canasta_c = c.get("recompra_inteligente", {}).get("canasta_habitual", [])
                 top_prods = ", ".join([p["descripcion"] for p in canasta_c[:3]]) if canasta_c else "línea habitual"
-                lines.append(f"• *{nom}* ({dias}d sin compra) — Tomar pedido de: *{top_prods}*.")
+                lines.append(f"• *{nom}* ({dias}d sin compra) — Tomar reposición habitual de: *{top_prods}*.")
+                lines.append(f"  {promo_decoupled_str}")
 
         if oportunidades:
             lines.append("\n🟠 *VENTANA DE PEDIDO / ONBOARDING NUEVOS:*")
@@ -1449,15 +1662,32 @@ def build_dashboard_payload(
                 dias = c.get("dias_inactivo", 0)
                 canasta_c = c.get("recompra_inteligente", {}).get("canasta_habitual", [])
                 top_prods = ", ".join([p["descripcion"] for p in canasta_c[:3]]) if canasta_c else "canasta de inicio"
-                lines.append(f"• *{nom}* ({dias}d) — Impulsar segundo pedido de: *{top_prods}* con bonificaciones 6+1 y 12+1.")
+                lines.append(f"• *{nom}* ({dias}d) — Impulsar segundo pedido de: *{top_prods}*.")
+                lines.append(f"  {promo_decoupled_str}")
 
         wa_agendas[s_id] = "\n".join(lines)
 
-    # 11. Cuentas por Cobrar Vencidas Globales (T024)
+    # 11. Cuentas por Cobrar Vencidas Globales (T024 y T032)
     global_cxc_vencidos = build_global_cxc_vencidos(cxc_path)
 
     # 12. Historico Completo Linda B2C para descarga Excel (T024)
     linda_b2c_full_history = build_linda_b2c_full_history(clientes_alertas)
+
+    # 13. Archivo Inactivos > 120 dias (T034)
+    inactivos_120d = build_inactivos_archivo_120d(clientes_alertas)
+
+    # 14. Discrepancias CxC vs Defontana (T034)
+    discrepancias_cxc = detect_cxc_defontana_discrepancies(cxc_path, df)
+
+    # 15. Catalogo Oficial de Promociones Vigentes (T034)
+    promos_path = Path("data/promociones_vigentes.json")
+    catalogo_promos = []
+    if promos_path.exists():
+        try:
+            with open(promos_path, "r", encoding="utf-8") as f:
+                catalogo_promos = json.load(f).get("promociones", [])
+        except Exception:
+            pass
 
     payload = {
         "SYNC_STATUS": sync_info,
@@ -1469,7 +1699,10 @@ def build_dashboard_payload(
         "CLIENTS": clients_frontend,
         "WA_AGENDAS": wa_agendas,
         "GLOBAL_CXC_VENCIDOS": global_cxc_vencidos,
-        "LINDA_B2C_FULL_HISTORY": linda_b2c_full_history
+        "LINDA_B2C_FULL_HISTORY": linda_b2c_full_history,
+        "INACTIVOS_ARCHIVO_120D": inactivos_120d,
+        "DISCREPANCIAS_CXC_DEFONTANA": discrepancias_cxc,
+        "CATALOGO_PROMOS_VIGENTES": catalogo_promos
     }
 
     print(f"[EXPORT] Payload generado exitosamente:")
