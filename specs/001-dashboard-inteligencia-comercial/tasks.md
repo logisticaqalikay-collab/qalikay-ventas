@@ -77,36 +77,69 @@
 - [x] **T029**: Implementar en `src/exportar_datos_dashboard.py` y `ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html` el listado completo `inactivosDetalle` por vendedor (clientes con `dias_inactivo > 60`, indicando si son de `1 Sola Compra` o `Recurrente Inactivo`, fecha última compra, días sin comprar, compras históricas, ticket promedio, venta total y Top 3 productos), hacer clicables tanto la tarjeta KPI `🔴 Inactivos >2 Meses` en la Ficha Individual como las columnas `1 Sola Compra (>2M)` y `Sin Comprar (>2M)` en la Matriz de Vendedores para desplegar `#seller-inactivos-detail-panel`, e incluir los botones **`📥 Descargar Excel Inactivos de este Vendedor (.xlsx)`** y **`📥 Descargar Excel Inactivos Consolidado (6 Carteras) (.xlsx)`**, ejecutando luego `.\actualizar_dashboard.bat`.
 - [x] **T030**: Configurar y activar el despliegue automático Opción B (Git + GitHub + Vercel Hobby / GitHub Pages a Costo Cero S/ 0.00): auditar credenciales de Git/GitHub en el equipo (revisando configuración existente en `..\qalikay-abastecimiento`), inicializar el repositorio Git local en `Estrategia Ventas Qali Kay`, asegurar compatibilidad directa en raíz (`index.html` / `vercel.json`), vincular el repositorio remoto y verificar el flujo de auto-publicación `[4/4]` en `actualizar_dashboard.bat`.
 
-
----
-
-## FASE 7: AUDITORÍA ANTI-ALUCINACIÓN, PROMOCIONES Y SINCRONIZACIÓN TOTAL (OCTUBRE 2026)
-- [x] **T031**: Actualizar `src/etl_ventas_defontana.py` para:
-  1. Descargar `RAW_VENTAS` en formato XLSX (`/export?format=xlsx`) preservando 100% de clientes con códigos alfanuméricos de mercados (`MERMULTCENT`, etc.).
-  2. Recuperar determinísticamente valores decimales de ventas corrompidos por Google Sheets a formato de fecha (`float(f"{dt.day}.{dt.month:02d}")`).
-  3. Descartar facturas gratuitas (`01 Factura Electrónica Gratuita Sin IGV`) del cómputo de ventas.
-  4. Corregir mapeo del prefijo `SANT` (Santiveri) para asignar como Proveedor Titular a `MOLINOS DEL MUNDO` (eliminando asignación errónea a Nutrivas).
-  5. Soportar dinámicamente la ruta de OneDrive en `C:\Users\USER\OneDrive\...` y `C:\Users\cguti\OneDrive\...`.
-- [x] **T032**: Actualizar `src/motor_reglas_carteras.py` para:
-  1. Asignar por regla soberana a `PITRU SOCIEDAD ANONIMA CERRADA` (`RUC 20501997545` / `SAYARIQ`) a la cartera de `carlos-cuadros`.
-  2. Normalizar DNIs (con/sin cero inicial) y excluir de métricas comerciales y de la cartera de Cristian a los 4 colaboradores: Enrique (`42072907`), Junnior (`49062951`), Kelly (`76738275`), Norexglis (`003166920` / `3166920`).
-  3. En cruce con `Clientes (usar)`, no sobreescribir la razón social de personas naturales con nombres comerciales ajenos (resolviendo el bug de `CESAR JOEL` en Kelly Solange Ruiz).
-  4. Contabilizar como documento vencido y deuda exigible todo documento en `Cuentas por cobrar 2026.xlsx` con `Estado == "VENCIDA"` o (`Estado == "A CUENTA"` con `Días vencidos > 0` y `Saldo > 0.50`).
-  5. Eliminar `FALLBACK_STAR_SKUS`: prohibir inventar productos en la canasta del cliente. Si el cliente tiene menos de 3 SKUs históricos, mostrar únicamente sus SKUs reales.
-- [x] **T033**: Actualizar `data/promociones_vigentes.json` y lógica de bonificaciones:
-  1. Restringir bonificaciones 6+1 y 12+1 exclusivamente a clientes y canales B2B (`tiendas/negocios`).
-  2. Configurar la promoción estandarizada para clientes B2C (`zully-b2c`): *"20% de descuento en la 2da unidad de tu próxima compra"*.
-  3. Añadir metadatos de campaña para permitir su visualización en el modal del HUD.
-- [x] **T034**: Actualizar `src/exportar_datos_dashboard.py` para:
-  1. Redacción desacoplada en Bandejas de WhatsApp (`WA_AGENDAS`) y Feed: separar la canasta habitual del cliente de la promoción sugerida, especificando explícitamente el SKU en promoción con su mecánica (evitando que parezca que los productos habituales tienen 6+1 o 12+1).
-  2. Aplicar filtro de clientes inactivos $> 120$ días (sin deuda): segregarlos de las acciones diarias y exportar el arreglo `INACTIVOS_ARCHIVO_120D`.
-  3. Ordenar las acciones diarias en WhatsApp dentro de cada grupo por menor cantidad de días de retraso (`retrasoDias` asc) y mayor ticket promedio (`ticketPromedio` desc).
-  4. Generar reporte de auditoría de discrepancias CxC vs Defontana (identificando facturas anuladas como `F001-6208` que aún figuran en CxC).
-  5. Exportar el catálogo completo de promociones en `CATALOGO_PROMOS_VIGENTES`.
-- [x] **T035**: Actualizar `ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html` y `index.html` para:
-  1. Convertir la tarjeta azul del HUD *"Promociones Vigentes: 9 campañas"* en interactiva (abrir `#modal-promociones-vigentes` con detalle de mecánicas B2B y promoción B2C).
-  2. Incorporar vista/filtro de "Archivo Inactivos (>120d)" con botón de reincorporación manual (`➕ Regresar a Acciones Diarias`) persistido en `localStorage`.
-  3. Reflejar alertas de auditoría CxC vs Defontana en el feed o modal de alertas.
-- [ ] **T036**: Ejecutar el pipeline de datos completo (`etl_ventas_defontana.py` $	o$ `motor_reglas_carteras.py` $	o$ `exportar_datos_dashboard.py`), verificar aserciones matemáticas y actualizar timestamp de sincronización a `28/10/2026`.
-- [ ] **T037**: Auditar visual y funcionalmente los 15 puntos reportados por el Director General.
-- [ ] **T038**: Publicar los cambios a producción en GitHub Pages (`origin/main`).
+
+
+---
+
+
+
+## FASE 7: AUDITORÍA ANTI-ALUCINACIÓN, PROMOCIONES Y SINCRONIZACIÓN TOTAL (OCTUBRE 2026)
+
+- [x] **T031**: Actualizar `src/etl_ventas_defontana.py` para:
+
+  1. Descargar `RAW_VENTAS` en formato XLSX (`/export?format=xlsx`) preservando 100% de clientes con códigos alfanuméricos de mercados (`MERMULTCENT`, etc.).
+
+  2. Recuperar determinísticamente valores decimales de ventas corrompidos por Google Sheets a formato de fecha (`float(f"{dt.day}.{dt.month:02d}")`).
+
+  3. Descartar facturas gratuitas (`01 Factura Electrónica Gratuita Sin IGV`) del cómputo de ventas.
+
+  4. Corregir mapeo del prefijo `SANT` (Santiveri) para asignar como Proveedor Titular a `MOLINOS DEL MUNDO` (eliminando asignación errónea a Nutrivas).
+
+  5. Soportar dinámicamente la ruta de OneDrive en `C:\Users\USER\OneDrive\...` y `C:\Users\cguti\OneDrive\...`.
+
+- [x] **T032**: Actualizar `src/motor_reglas_carteras.py` para:
+
+  1. Asignar por regla soberana a `PITRU SOCIEDAD ANONIMA CERRADA` (`RUC 20501997545` / `SAYARIQ`) a la cartera de `carlos-cuadros`.
+
+  2. Normalizar DNIs (con/sin cero inicial) y excluir de métricas comerciales y de la cartera de Cristian a los 4 colaboradores: Enrique (`42072907`), Junnior (`49062951`), Kelly (`76738275`), Norexglis (`003166920` / `3166920`).
+
+  3. En cruce con `Clientes (usar)`, no sobreescribir la razón social de personas naturales con nombres comerciales ajenos (resolviendo el bug de `CESAR JOEL` en Kelly Solange Ruiz).
+
+  4. Contabilizar como documento vencido y deuda exigible todo documento en `Cuentas por cobrar 2026.xlsx` con `Estado == "VENCIDA"` o (`Estado == "A CUENTA"` con `Días vencidos > 0` y `Saldo > 0.50`).
+
+  5. Eliminar `FALLBACK_STAR_SKUS`: prohibir inventar productos en la canasta del cliente. Si el cliente tiene menos de 3 SKUs históricos, mostrar únicamente sus SKUs reales.
+
+- [x] **T033**: Actualizar `data/promociones_vigentes.json` y lógica de bonificaciones:
+
+  1. Restringir bonificaciones 6+1 y 12+1 exclusivamente a clientes y canales B2B (`tiendas/negocios`).
+
+  2. Configurar la promoción estandarizada para clientes B2C (`zully-b2c`): *"20% de descuento en la 2da unidad de tu próxima compra"*.
+
+  3. Añadir metadatos de campaña para permitir su visualización en el modal del HUD.
+
+- [x] **T034**: Actualizar `src/exportar_datos_dashboard.py` para:
+
+  1. Redacción desacoplada en Bandejas de WhatsApp (`WA_AGENDAS`) y Feed: separar la canasta habitual del cliente de la promoción sugerida, especificando explícitamente el SKU en promoción con su mecánica (evitando que parezca que los productos habituales tienen 6+1 o 12+1).
+
+  2. Aplicar filtro de clientes inactivos $> 120$ días (sin deuda): segregarlos de las acciones diarias y exportar el arreglo `INACTIVOS_ARCHIVO_120D`.
+
+  3. Ordenar las acciones diarias en WhatsApp dentro de cada grupo por menor cantidad de días de retraso (`retrasoDias` asc) y mayor ticket promedio (`ticketPromedio` desc).
+
+  4. Generar reporte de auditoría de discrepancias CxC vs Defontana (identificando facturas anuladas como `F001-6208` que aún figuran en CxC).
+
+  5. Exportar el catálogo completo de promociones en `CATALOGO_PROMOS_VIGENTES`.
+
+- [x] **T035**: Actualizar `ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html` y `index.html` para:
+
+  1. Convertir la tarjeta azul del HUD *"Promociones Vigentes: 9 campañas"* en interactiva (abrir `#modal-promociones-vigentes` con detalle de mecánicas B2B y promoción B2C).
+
+  2. Incorporar vista/filtro de "Archivo Inactivos (>120d)" con botón de reincorporación manual (`➕ Regresar a Acciones Diarias`) persistido en `localStorage`.
+
+  3. Reflejar alertas de auditoría CxC vs Defontana en el feed o modal de alertas.
+
+- [x] **T036**: Ejecutar el pipeline de datos completo (`etl_ventas_defontana.py` $	o$ `motor_reglas_carteras.py` $	o$ `exportar_datos_dashboard.py`), verificar aserciones matemáticas y actualizar timestamp de sincronización a `28/10/2026`.
+
+- [x] **T037**: Auditar visual y funcionalmente los 15 puntos reportados por el Director General.
+
+- [x] **T038**: Publicar los cambios a producción en GitHub Pages (`origin/main`).
+
