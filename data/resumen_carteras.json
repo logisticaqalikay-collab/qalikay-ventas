@@ -1,44 +1,44 @@
 {
-  "fecha_corte": "2026-10-28",
+  "fecha_corte": "2026-11-02",
   "carteras": {
     "carlos-cuadros": {
       "nombre": "carlos-cuadros",
-      "transacciones_totales": 1248,
-      "transacciones_ficha": 1248,
-      "unidades_totales": 6345.0,
-      "unidades_ficha": 6345.0,
-      "venta_neta_total": 79119.11,
-      "venta_neta_ficha": 79119.11,
-      "clientes_activos": 54
+      "transacciones_totales": 1262,
+      "transacciones_ficha": 1262,
+      "unidades_totales": 6445.0,
+      "unidades_ficha": 6445.0,
+      "venta_neta_total": 80421.2,
+      "venta_neta_ficha": 80421.2,
+      "clientes_activos": 55
     },
     "cristian-gutierrez": {
       "nombre": "cristian-gutierrez",
-      "transacciones_totales": 20195,
-      "transacciones_ficha": 6146,
-      "unidades_totales": 104152.0,
-      "unidades_ficha": 36674.0,
-      "venta_neta_total": 2102943.61,
-      "venta_neta_ficha": 523526.11,
+      "transacciones_totales": 20351,
+      "transacciones_ficha": 6150,
+      "unidades_totales": 104820.0,
+      "unidades_ficha": 36716.0,
+      "venta_neta_total": 2116135.05,
+      "venta_neta_ficha": 524060.64,
       "clientes_activos": 86
     },
     "enrique-garcia": {
       "nombre": "enrique-garcia",
-      "transacciones_totales": 4416,
-      "transacciones_ficha": 4416,
-      "unidades_totales": 25154.0,
-      "unidades_ficha": 25154.0,
-      "venta_neta_total": 274663.38,
-      "venta_neta_ficha": 274663.38,
-      "clientes_activos": 235
+      "transacciones_totales": 4433,
+      "transacciones_ficha": 4433,
+      "unidades_totales": 25249.0,
+      "unidades_ficha": 25249.0,
+      "venta_neta_total": 276137.77,
+      "venta_neta_ficha": 276137.77,
+      "clientes_activos": 236
     },
     "walter-gutierrez": {
       "nombre": "walter-gutierrez",
-      "transacciones_totales": 8398,
-      "transacciones_ficha": 7041,
-      "unidades_totales": 39289.0,
-      "unidades_ficha": 34741.0,
-      "venta_neta_total": 594232.5,
-      "venta_neta_ficha": 525381.52,
+      "transacciones_totales": 8425,
+      "transacciones_ficha": 7068,
+      "unidades_totales": 39509.0,
+      "unidades_ficha": 34961.0,
+      "venta_neta_total": 596836.75,
+      "venta_neta_ficha": 527985.77,
       "clientes_activos": 46
     },
     "zully-b2b": {
@@ -53,13 +53,13 @@
     },
     "zully-b2c": {
       "nombre": "zully-b2c",
-      "transacciones_totales": 2610,
-      "transacciones_ficha": 2610,
-      "unidades_totales": 3833.0,
-      "unidades_ficha": 3833.0,
-      "venta_neta_total": 127362.35,
-      "venta_neta_ficha": 127362.35,
-      "clientes_activos": 897
+      "transacciones_totales": 2619,
+      "transacciones_ficha": 2619,
+      "unidades_totales": 3855.0,
+      "unidades_ficha": 3855.0,
+      "venta_neta_total": 127886.05,
+      "venta_neta_ficha": 127886.05,
+      "clientes_activos": 898
     }
   }
 }

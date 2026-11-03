@@ -80,10 +80,13 @@ if errorlevel 1 (
     goto :fin_sync
 )
 
+echo      * Sincronizando index.html para GitHub Pages...
+copy /y "%PROJECT_DIR%ejecucion\PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html" "%PROJECT_DIR%index.html" >nul 2>&1
+
 echo      * Realizando commit y push automatico a rama principal...
 set "GIT_TERMINAL_PROMPT=0"
 set "GCM_INTERACTIVE=never"
-"%GIT_CMD%" add ejecucion\PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html data\datos_comerciales.json index.html >> "%LOG_FILE%" 2>&1
+"%GIT_CMD%" add ejecucion\PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html data\datos_comerciales.json index.html data\ventas_2025_2026.parquet data\alertas_comerciales_consolidadas.json >> "%LOG_FILE%" 2>&1
 "%GIT_CMD%" commit -m "Auto-sync: Sincronizacion comercial RPA Defontana [%date% %time%]" >> "%LOG_FILE%" 2>&1
 "%GIT_CMD%" push origin main >> "%LOG_FILE%" 2>&1
 echo      * [OK] Cambios enviados a repositorio remoto para despliegue automatico en Vercel / GitHub Pages.

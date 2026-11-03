@@ -1087,21 +1087,27 @@ def build_dashboard_payload(
     first_purchase = df.groupby("Cod_Cliente")["Fecha"].min().to_dict()
     df["Es_Primera_Compra"] = df.apply(lambda r: r["Fecha"] == first_purchase.get(r["Cod_Cliente"]), axis=1)
 
-    # 5. Generar MONTHLY_DATA para los últimos 6 meses de 2026 + Consolidado Anual (Comentarios #1, #2, #3, #5, #6, #9)
-    periods = ["2026-10", "2026-09", "2026-08", "2026-07", "2026-06", "2026-05", "2026-ANUAL"]
+    # 5. Generar MONTHLY_DATA para los últimos meses de 2026 + Consolidado Anual
+    has_nov = not df[df["Periodo_Mes"] == "2026-11"].empty
+    max_nov_day = pd.to_datetime(df[df["Periodo_Mes"] == "2026-11"]["Fecha"].max()).day if has_nov else 1
+    days_in_nov = 30
+
+    if has_nov:
+        periods = ["2026-11", "2026-10", "2026-09", "2026-08", "2026-07", "2026-06", "2026-05", "2026-ANUAL"]
+    else:
+        periods = ["2026-10", "2026-09", "2026-08", "2026-07", "2026-06", "2026-05", "2026-ANUAL"]
+
     period_cutoffs = {
-        "2026-10": datetime.date(2026, 10, 26),
+        "2026-11": datetime.date(2026, 11, max_nov_day) if has_nov else datetime.date(2026, 11, 1),
+        "2026-10": datetime.date(2026, 10, 31),
         "2026-09": datetime.date(2026, 9, 30),
         "2026-08": datetime.date(2026, 8, 31),
         "2026-07": datetime.date(2026, 7, 31),
         "2026-06": datetime.date(2026, 6, 30),
         "2026-05": datetime.date(2026, 5, 31),
-        "2026-ANUAL": datetime.date(2026, 10, 26),
+        "2026-ANUAL": datetime.date(2026, 11, max_nov_day) if has_nov else datetime.date(2026, 10, 31),
     }
     monthly_data: Dict[str, List[Dict[str, Any]]] = {}
-
-    max_oct_day = pd.to_datetime(df[df["Periodo_Mes"] == "2026-10"]["Fecha"].max()).day if not df[df["Periodo_Mes"] == "2026-10"].empty else 26
-    days_in_oct = 31
 
     # Cartera total actual de cada vendedor desde alertas_comerciales_consolidadas.json (1,312 clientes)
     cartera_actual_counts = {
@@ -1141,8 +1147,10 @@ def build_dashboard_payload(
             sin2m = inact_stats[c_id]["sin2m"]
 
             proy = None
-            if p == "2026-10":
-                proy = round((venta / max(max_oct_day, 1)) * days_in_oct, 2)
+            if p == "2026-11":
+                proy = round((venta / max(max_nov_day, 1)) * days_in_nov, 2)
+            elif p == "2026-10":
+                proy = venta  # Octubre cerrado al 100%
 
             deuda = deuda_por_cartera.get(s_id, 0.0)
             cxc_str = f"S/ {deuda:,.2f}"
@@ -1214,7 +1222,7 @@ def build_dashboard_payload(
         }
         for mk, mc in zip(m_keys, six_months):
             row_venta[mk] = s_m_rows[mc]["venta"]
-        row_venta["octProy"] = s_m_rows["2026-10"]["proy"]
+        row_venta["octProy"] = s_m_rows["2026-10"]["venta"]
         time_series["venta"].append(row_venta)
 
         # 2. Clientes activos (promedio en meses con actividad en 2025)
@@ -1717,12 +1725,13 @@ def build_dashboard_payload(
 def inject_data_into_html(payload: Dict[str, Any], html_path: Path = DEFAULT_HTML_PATH):
     """
     Inyecta determinísticamente los datos consolidados en el archivo HTML del dashboard
-    definiendo window.__QALIKAY_REAL_DATA__.
+    definiendo window.__QALIKAY_REAL_DATA__ y actualizando la estampa estática del header.
+    Inyecta automáticamente tanto en ejecucion/PROTOTIPO_DASHBOARD_VENTAS_QALIKAY.html como en index.html.
     """
-    if not html_path.exists():
-        raise FileNotFoundError(f"Archivo HTML no encontrado en {html_path}")
-
-    html_content = html_path.read_text(encoding="utf-8")
+    target_paths = [html_path]
+    index_path = Path("index.html")
+    if index_path.exists() and index_path.resolve() != html_path.resolve():
+        target_paths.append(index_path)
 
     json_str = json.dumps(payload, ensure_ascii=False)
     injected_script = f"""  <!-- DATOS REALES DE PRODUCCION INYECTADOS DETERMINISTICAMENTE -->
@@ -1730,21 +1739,33 @@ def inject_data_into_html(payload: Dict[str, Any], html_path: Path = DEFAULT_HTM
     window.__QALIKAY_REAL_DATA__ = {json_str};
   </script>
 """
+    sync_ts = payload.get("SYNC_STATUS", {}).get("ultima_actualizacion", "")
 
-    marker_start = "<!-- ==================== JAVASCRIPT ==================== -->"
-    if marker_start in html_content:
-        if "window.__QALIKAY_REAL_DATA__" in html_content:
-            html_content = re.sub(
-                r"<!-- DATOS REALES DE PRODUCCION INYECTADOS DETERMINISTICAMENTE -->[\s\S]*?</script>\s*",
-                "",
-                html_content
-            )
+    for p in target_paths:
+        if not p.exists():
+            continue
+        html_content = p.read_text(encoding="utf-8")
+        marker_start = "<!-- ==================== JAVASCRIPT ==================== -->"
+        if marker_start in html_content:
+            if "window.__QALIKAY_REAL_DATA__" in html_content:
+                html_content = re.sub(
+                    r"<!-- DATOS REALES DE PRODUCCION INYECTADOS DETERMINISTICAMENTE -->[\s\S]*?</script>\s*",
+                    "",
+                    html_content
+                )
+            html_content = html_content.replace(marker_start, f"{marker_start}\n{injected_script}")
 
-        html_content = html_content.replace(marker_start, f"{marker_start}\n{injected_script}")
-        html_path.write_text(html_content, encoding="utf-8")
-        print(f"[HTML INJECT] Datos reales inyectados exitosamente en {html_path.name} ({len(json_str):,} caracteres JSON).")
-    else:
-        print(f"[WARN] Marcador {marker_start} no encontrado en {html_path.name}. Omitiendo inyeccion.")
+            if sync_ts:
+                html_content = re.sub(
+                    r'<span style="font-size: 12px; color: #64748b;" id="sync-subtext">Última sync automática RPA: <strong>.*?</strong> \(Nivel 1\)</span>',
+                    f'<span style="font-size: 12px; color: #64748b;" id="sync-subtext">Última sync automática RPA: <strong>{sync_ts}</strong> (Nivel 1)</span>',
+                    html_content
+                )
+
+            p.write_text(html_content, encoding="utf-8")
+            print(f"[HTML INJECT] Datos reales inyectados exitosamente en {p.name} ({len(json_str):,} caracteres JSON).")
+        else:
+            print(f"[WARN] Marcador {marker_start} no encontrado en {p.name}. Omitiendo inyeccion.")
 
 
 def main():
